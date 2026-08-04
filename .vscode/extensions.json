@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    // Required for meaningful diagnostics in globals.css — the built-in CSS
+    // service is disabled for Tailwind at-rules in settings.json.
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ]
+}

@@ -1,0 +1,642 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+ * DESIGN TOKENS
+ * ----------------------------------------------------------------------------
+ * Dark-first. Every colour is authored in OKLCH so that lightness ramps are
+ * perceptually even — critical when a single accent hue has to work as a 4px
+ * border, a 40% glow and a solid button fill without any of them looking muddy.
+ *
+ * Three token tiers:
+ *   1. Palette    (--brand-500)      raw, never used directly in components
+ *   2. Semantic   (--primary)        shadcn contract, used by ui/* primitives
+ *   3. Domain     (--profit)         finance-specific, used by our components
+ *
+ * The domain tier is what stops this looking like a generic admin template:
+ * profit/loss/pending are first-class colours, not ad-hoc `text-green-500`.
+ * ========================================================================== */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+
+  /* shadcn semantic contract */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Elevation surfaces — layered translucent planes for glassmorphism */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+
+  /* Domain: financial semantics */
+  --color-profit: var(--profit);
+  --color-profit-muted: var(--profit-muted);
+  --color-loss: var(--loss);
+  --color-loss-muted: var(--loss-muted);
+  --color-pending: var(--pending);
+  --color-pending-muted: var(--pending-muted);
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
+
+  /* Brand ramp */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  /* Rank tiers LV1..LV7 — used by rank badges, progress rails, tree nodes */
+  --color-rank-1: var(--rank-1);
+  --color-rank-2: var(--rank-2);
+  --color-rank-3: var(--rank-3);
+  --color-rank-4: var(--rank-4);
+  --color-rank-5: var(--rank-5);
+  --color-rank-6: var(--rank-6);
+  --color-rank-7: var(--rank-7);
+
+  /* Charts inherit domain colours so Recharts matches the rest of the UI */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Motion — a single easing vocabulary keeps transitions feeling coherent */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s var(--ease-out-expo) infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
+}
+
+/* ---------------------------------------------------------------- DARK (default) */
+:root,
+.dark {
+  color-scheme: dark;
+
+  /* Deep blue-violet cast rather than neutral grey. Pure #000 reads as "cheap
+     OLED demo"; a slight chroma at low lightness reads as engineered. */
+  --background: oklch(0.145 0.014 275);
+  --foreground: oklch(0.97 0.004 270);
+
+  --surface-1: oklch(0.185 0.016 274);
+  --surface-2: oklch(0.222 0.018 274);
+  --surface-3: oklch(0.268 0.02 274);
+  --hairline: oklch(1 0 0 / 8%);
+
+  --card: oklch(0.192 0.016 274);
+  --card-foreground: oklch(0.97 0.004 270);
+  --popover: oklch(0.212 0.017 274);
+  --popover-foreground: oklch(0.97 0.004 270);
+
+  --brand-50: #f0e070;
+  --brand-100: #f0d060;
+  --brand-200: #f0c050;
+  --brand-300: #e0b040;
+  --brand-400: #d0a030;
+  --brand-500: #b07010;
+  --brand-600: #905000;
+  --brand-700: #704010;
+  --brand-800: #503010;
+  --brand-900: #302010;
+
+  --primary: #e0b040;
+  --primary-foreground: #00081f;
+
+  --secondary: oklch(0.252 0.019 274);
+  --secondary-foreground: oklch(0.97 0.004 270);
+  --muted: oklch(0.242 0.017 274);
+  --muted-foreground: oklch(0.68 0.015 272);
+  --accent: oklch(0.278 0.028 278);
+  --accent-foreground: oklch(0.98 0.004 270);
+
+  --destructive: oklch(0.64 0.215 22);
+  --destructive-foreground: oklch(0.99 0.002 20);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: #e0b040 / 60%;
+
+  /* Financial semantics.
+     Deliberately NOT pure red/green: ~8% of men have red-green CVD, so profit
+     leans cyan-teal and loss leans magenta-red, keeping them separable by hue
+     rotation as well as by the ▲/▼ glyphs our Money component always renders. */
+  --profit: oklch(0.76 0.17 165);
+  --profit-muted: oklch(0.76 0.17 165 / 14%);
+  --loss: oklch(0.66 0.215 12);
+  --loss-muted: oklch(0.66 0.215 12 / 14%);
+  --pending: oklch(0.79 0.15 78);
+  --pending-muted: oklch(0.79 0.15 78 / 14%);
+  --info: oklch(0.72 0.13 235);
+  --info-muted: oklch(0.72 0.13 235 / 14%);
+
+  --rank-1: oklch(0.7 0.03 265);
+  --rank-2: oklch(0.72 0.11 205);
+  --rank-3: oklch(0.75 0.14 165);
+  --rank-4: oklch(0.8 0.15 105);
+  --rank-5: oklch(0.81 0.15 75);
+  --rank-6: oklch(0.7 0.2 25);
+  --rank-7: oklch(0.68 0.21 310);
+
+  --chart-1: #e0b040;
+  --chart-2: oklch(0.76 0.17 165);
+  --chart-3: oklch(0.72 0.13 235);
+  --chart-4: oklch(0.79 0.15 78);
+  --chart-5: oklch(0.68 0.21 330);
+
+  --sidebar: oklch(0.168 0.015 274);
+  --sidebar-foreground: oklch(0.9 0.008 270);
+  --sidebar-primary: #e0b040;
+  --sidebar-primary-foreground: #00081f;
+  --sidebar-accent: oklch(0.245 0.022 277);
+  --sidebar-accent-foreground: oklch(0.98 0.004 270);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-ring: #e0b040 / 60%;
+
+  --radius: 0.75rem;
+
+  /* Glass recipe — referenced by the .glass utility below */
+  --glass-bg: oklch(0.24 0.018 274 / 55%);
+  --glass-border: oklch(1 0 0 / 10%);
+  --glass-blur: 20px;
+
+  --shadow-ambient: 0 1px 2px oklch(0 0 0 / 40%), 0 8px 24px -8px oklch(0 0 0 / 55%);
+  --shadow-lifted: 0 2px 4px oklch(0 0 0 / 35%), 0 24px 48px -16px oklch(0 0 0 / 65%);
+  --shadow-brand: 0 8px 32px -8px #e0b040 / 45%;
+}
+
+/* ---------------------------------------------------------------- LIGHT */
+.light {
+  color-scheme: light;
+
+  /* Not pure white — a faintly cool paper tone stops large surfaces glaring. */
+  --background: oklch(0.985 0.003 275);
+  --foreground: oklch(0.2 0.015 275);
+
+  --surface-1: oklch(1 0 0);
+  --surface-2: oklch(0.975 0.004 275);
+  --surface-3: oklch(0.95 0.006 275);
+  --hairline: oklch(0.2 0.015 275 / 8%);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.015 275);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.015 275);
+
+  --brand-50: #f0e070;
+  --brand-100: #f0d060;
+  --brand-200: #f0c050;
+  --brand-300: #e0b040;
+  --brand-400: #d0a030;
+  --brand-500: #b07010;
+  --brand-600: #905000;
+  --brand-700: #704010;
+  --brand-800: #503010;
+  --brand-900: #302010;
+
+  --primary: #e0b040;
+  --primary-foreground: #00081f;
+
+  --secondary: oklch(0.955 0.005 275);
+  --secondary-foreground: oklch(0.25 0.015 275);
+  --muted: oklch(0.96 0.004 275);
+  --muted-foreground: oklch(0.48 0.014 274);
+  --accent: oklch(0.94 0.014 282);
+  --accent-foreground: oklch(0.25 0.02 280);
+
+  --destructive: oklch(0.55 0.225 22);
+  --destructive-foreground: oklch(0.99 0.002 20);
+
+  --border: oklch(0.2 0.015 275 / 11%);
+  --input: oklch(0.2 0.015 275 / 15%);
+  --ring: #e0b040 / 45%;
+
+  --profit: oklch(0.55 0.15 165);
+  --profit-muted: oklch(0.55 0.15 165 / 12%);
+  --loss: oklch(0.55 0.21 12);
+  --loss-muted: oklch(0.55 0.21 12 / 12%);
+  --pending: oklch(0.62 0.14 68);
+  --pending-muted: oklch(0.62 0.14 68 / 12%);
+  --info: oklch(0.55 0.14 235);
+  --info-muted: oklch(0.55 0.14 235 / 12%);
+
+  --rank-1: oklch(0.55 0.02 265);
+  --rank-2: oklch(0.55 0.1 205);
+  --rank-3: oklch(0.53 0.13 165);
+  --rank-4: oklch(0.6 0.14 105);
+  --rank-5: oklch(0.62 0.15 68);
+  --rank-6: oklch(0.56 0.19 25);
+  --rank-7: oklch(0.55 0.2 310);
+
+  --chart-1: #e0b040;
+  --chart-2: oklch(0.55 0.15 165);
+  --chart-3: oklch(0.55 0.14 235);
+  --chart-4: oklch(0.62 0.14 68);
+  --chart-5: oklch(0.56 0.2 330);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.3 0.014 275);
+  --sidebar-primary: #e0b040;
+  --sidebar-primary-foreground: #00081f;
+  --sidebar-accent: oklch(0.955 0.012 282);
+  --sidebar-accent-foreground: oklch(0.25 0.02 280);
+  --sidebar-border: oklch(0.2 0.015 275 / 9%);
+  --sidebar-ring: oklch(0.55 0.225 285 / 45%);
+
+  --radius: 0.75rem;
+
+  --glass-bg: oklch(1 0 0 / 68%);
+  --glass-border: oklch(0.2 0.015 275 / 9%);
+  --glass-blur: 20px;
+
+  --shadow-ambient: 0 1px 2px oklch(0.2 0.015 275 / 6%), 0 8px 24px -8px oklch(0.2 0.015 275 / 10%);
+  --shadow-lifted: 0 2px 4px oklch(0.2 0.015 275 / 6%), 0 24px 48px -16px oklch(0.2 0.015 275 / 16%);
+  --shadow-brand: 0 8px 32px -8px #e0b040 / 30%;
+
+  /* Logo brand colors — same as dark theme for consistency */
+  --logo-navy-900: #00081f;
+  --logo-navy-800: #001040;
+  --logo-navy-700: #001050;
+  --logo-navy-600: #002060;
+  --logo-navy-500: #002050;
+  --logo-navy-400: #003070;
+  --logo-navy-300: #003080;
+  --logo-gold-900: #905000;
+  --logo-gold-700: #b07010;
+  --logo-gold-500: #d0a030;
+  --logo-gold-400: #e0b040;
+  --logo-gold-300: #f0c050;
+  --logo-gold-200: #f0d060;
+  --logo-gold-100: #f0e070;
+
+  --color-logo-navy: var(--logo-navy-600);
+  --color-logo-gold: var(--logo-gold-400);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* Ambient brand wash. Fixed attachment so it does not parallax on scroll. */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, var(--brand-muted-wash, oklch(0.62 0.215 285 / 10%)), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.72 0.13 235 / 6%), transparent);
+    background-attachment: fixed;
+  }
+
+  /* Financial figures must never jitter as digits change during polling. */
+  .tabular,
+  table td,
+  table th {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::selection {
+    background: oklch(0.62 0.215 285 / 30%);
+  }
+
+  /* Scrollbars: visible enough to grab, quiet enough to ignore. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--surface-3);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Frosted panel. Kept as a utility rather than baked into <Card> so that
+     data-dense tables can opt out — backdrop-filter on a tall scrolling table
+     is a measurable paint cost on low-end devices. */
+  .glass {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* 1px gradient hairline along the top edge — the detail that reads as
+     "expensive" on dark cards. Uses a mask so it fades at both ends. */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 22%), transparent);
+    pointer-events: none;
+  }
+
+  .text-gradient-brand {
+    background: linear-gradient(135deg, var(--logo-gold-300) 0%, var(--logo-gold-500) 45%, var(--logo-navy-400) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .shadow-ambient {
+    box-shadow: var(--shadow-ambient);
+  }
+  .shadow-lifted {
+    box-shadow: var(--shadow-lifted);
+  }
+  .shadow-brand {
+    box-shadow: var(--shadow-brand);
+  }
+
+  /* Skeleton shimmer. Uses a moving gradient instead of opacity pulsing so a
+     grid of skeletons reads as one coherent surface rather than 20 blinkers. */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 7%), transparent);
+    animation: shimmer 1.8s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.62 0.215 285 / 45%);
+  }
+  70% {
+    box-shadow: 0 0 0 12px oklch(0.62 0.215 285 / 0%);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.62 0.215 285 / 0%);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(-6%, -4%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(6%, 4%, 0) scale(1.15);
+  }
+}
+
+/* ---- Logo-derived palette (Dollar2X navy + gold) -------------------------
+ * Extracted from public/images/home/d2x-logo.png so the marketing surface
+ * literally wears the brand's own colours rather than the generic purple
+ * brand ramp used by the authenticated app.
+ * ----------------------------------------------------------------------- */
+:root,
+.dark {
+  --logo-navy-900: #00081f;
+  --logo-navy-800: #001040;
+  --logo-navy-700: #001050;
+  --logo-navy-600: #002060;
+  --logo-navy-500: #002050;
+  --logo-navy-400: #003070;
+  --logo-navy-300: #003080;
+  --logo-gold-900: #905000;
+  --logo-gold-700: #b07010;
+  --logo-gold-500: #d0a030;
+  --logo-gold-400: #e0b040;
+  --logo-gold-300: #f0c050;
+  --logo-gold-200: #f0d060;
+  --logo-gold-100: #f0e070;
+
+  --color-logo-navy: var(--logo-navy-600);
+  --color-logo-gold: var(--logo-gold-400);
+}
+
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes news-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-news-scroll {
+  animation: news-scroll 30s linear infinite;
+}
+
+.animate-news-scroll:hover {
+  animation-play-state: paused;
+}
+
+@layer components {
+  /* Gold gradient text — the headline accent pulled straight from the logo. */
+  .text-gradient-gold {
+    background: linear-gradient(
+      120deg,
+      var(--logo-gold-200) 0%,
+      var(--logo-gold-400) 40%,
+      var(--logo-gold-100) 70%,
+      var(--logo-gold-300) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-pan 6s ease infinite;
+  }
+
+  /* Animated gradient border wrapper for premium cards. */
+  .gold-ring {
+    position: relative;
+  }
+  .gold-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      130deg,
+      transparent 30%,
+      var(--logo-gold-400) 50%,
+      transparent 70%
+    );
+    background-size: 200% 200%;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    animation: gradient-pan 4s ease infinite;
+    pointer-events: none;
+  }
+  .gold-ring:hover::before {
+    opacity: 1;
+  }
+
+  /* Shimmering gold button surface. */
+  .btn-gold-shimmer {
+    background: linear-gradient(
+      110deg,
+      var(--logo-gold-500) 0%,
+      var(--logo-gold-200) 45%,
+      var(--logo-gold-400) 55%,
+      var(--logo-gold-500) 100%
+    );
+    background-size: 220% auto;
+    animation: gradient-pan 4.5s ease infinite;
+  }
+}
+
+/* Respect the OS setting. Framer Motion reads this too via useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

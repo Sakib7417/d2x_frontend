@@ -1,0 +1,40 @@
+{
+  // ---------------------------------------------------------------------------
+  // Tailwind CSS v4 uses CSS-first configuration: @theme, @custom-variant,
+  // @utility, @apply. VS Code's built-in CSS language service does not know
+  // these at-rules and reports each one as "Unknown at rule", which buries
+  // globals.css in dozens of phantom warnings.
+  //
+  // These are not real errors — `next build` and the Tailwind compiler both
+  // accept the file. Silencing the built-in linter is the documented fix; the
+  // Tailwind CSS IntelliSense extension (see extensions.json) then provides
+  // proper diagnostics and autocomplete for these at-rules.
+  // ---------------------------------------------------------------------------
+  "css.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+
+  // NOTE: Tailwind's docs also suggest remapping `*.css` to the `tailwindcss`
+  // language mode. Deliberately not done here — that mode only exists if the
+  // IntelliSense extension is installed, so anyone without it would lose CSS
+  // syntax highlighting entirely. The lint settings above are sufficient on
+  // their own, and the extension adds its own value when present.
+
+  // Use the workspace TypeScript version, so the IDE and `pnpm typecheck`
+  // never disagree about what compiles. This project pins TS 5.9.x, and a
+  // bundled editor version can differ.
+  //
+  // These use the `js/ts.*` keys. The older `typescript.*` equivalents are
+  // deprecated in this editor; stock VS Code still reads the old names, so if
+  // the team is mixed, add the `typescript.*` variants back in a user-level
+  // settings file rather than here (they would emit deprecation warnings).
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+  // Prefer the `@/*` alias over deep relative paths on auto-import.
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
