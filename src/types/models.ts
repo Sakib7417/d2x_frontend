@@ -26,6 +26,7 @@ import type {
   BlockchainTransactionType,
   CycleBonusStatus,
   DepositStatus,
+  GovIdType,
   LedgerType,
   NotificationType,
   RankLevel,
@@ -58,6 +59,9 @@ export interface AuthUser {
   rank: RankLevel;
   autoTradeStatus: boolean;
   status: UserStatus;
+  govIdType?: GovIdType | null;
+  govIdFrontUrl?: string | null;
+  govIdBackUrl?: string | null;
 }
 
 /** Full user, as returned by GET /users/profile (password stripped server-side). */
@@ -75,6 +79,12 @@ export interface User {
   autoTradeStatus: boolean;
   status: UserStatus;
   isContentCreator?: boolean;
+  /** Government ID type chosen at signup (AADHAAR/PAN/PASSPORT/DRIVING_LICENSE/VOTER_ID). */
+  govIdType?: GovIdType | null;
+  /** Relative path to the front-side photo, e.g. /uploads/kyc/kyc-...jpg. */
+  govIdFrontUrl?: string | null;
+  /** Relative path to the back-side photo. */
+  govIdBackUrl?: string | null;
   lastLogin: ISODateString | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
@@ -663,6 +673,8 @@ export interface TicketMessage {
   senderId: UUID;
   isAdmin: boolean;
   message: string;
+  /** JSON array of relative image paths, e.g. ["/uploads/tickets/ticket-123.jpg"]. Null when no attachments. */
+  attachments?: string[] | null;
   createdAt: ISODateString;
   sender?: UserRef;
 }
@@ -681,14 +693,21 @@ export interface Ticket {
   user?: UserRef;
 }
 
-/** Body for POST /tickets. */
+/**
+ * Body for POST /tickets.
+ *
+ * Sent as `multipart/form-data` when attachment images are included, otherwise
+ * as JSON. The ticket-api mutation builds FormData when files are present.
+ */
 export interface CreateTicketPayload {
   subject: string;
   message: string;
   priority?: "LOW" | "MEDIUM" | "HIGH";
+  attachments?: File[];
 }
 
-/** Body for POST /tickets/:id/reply. */
+/** Body for POST /tickets/:id/reply. Same multipart/JSON dual-mode as create. */
 export interface ReplyTicketPayload {
   message: string;
+  attachments?: File[];
 }

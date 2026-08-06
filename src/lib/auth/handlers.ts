@@ -22,14 +22,35 @@ export async function handleCredentialExchange(
   request: NextRequest,
   upstreamPath: "/auth/login" | "/auth/signup",
 ): Promise<NextResponse> {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  // Signup now carries government ID photos as multipart/form-data. The proxy's
+  // `callUpstream` understands the `{ __rawBody, contentType }` shape and
+  // forwards the bytes verbatim with the original boundary intact — re-parsing
+  // here would corrupt the multipart envelope. Login stays JSON.
   let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Invalid request body." },
-      { status: 400 },
-    );
+  if (contentType.includes("multipart/form-data")) {
+    try {
+      const arrayBuffer = await request.arrayBuffer();
+      body = {
+        __rawBody: new Uint8Array(arrayBuffer),
+        contentType,
+      };
+    } catch {
+      return NextResponse.json(
+        { success: false, message: "Invalid request body." },
+        { status: 400 },
+      );
+    }
+  } else {
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, message: "Invalid request body." },
+        { status: 400 },
+      );
+    }
   }
 
   let upstream;

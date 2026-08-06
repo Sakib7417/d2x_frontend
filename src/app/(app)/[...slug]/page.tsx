@@ -452,6 +452,7 @@ function SupportTicketsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [helpType, setHelpType] = useState<"GENERAL_INQUIRY" | "TECHNICAL_SUPPORT" | "ACCOUNT_HELP" | "FEEDBACK">("GENERAL_INQUIRY");
   const { data, isLoading } = useMyTicketsQuery({ page, limit: 20 });
   const [create, createMut] = useCreateTicketMutation();
@@ -480,9 +481,9 @@ function SupportTicketsPage() {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return toast.error("Subject and message are required.");
     try {
-      const ticket = await create({ subject, message, priority: helpTypeToPriority[helpType] }).unwrap();
+      const ticket = await create({ subject, message, priority: helpTypeToPriority[helpType], attachments }).unwrap();
       toast.success("Ticket created successfully.");
-      setSubject(""); setMessage(""); setHelpType("GENERAL_INQUIRY"); setShowForm(false);
+      setSubject(""); setMessage(""); setAttachments([]); setHelpType("GENERAL_INQUIRY"); setShowForm(false);
       setSelectedId(ticket.id);
     } catch (error) {
       toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
@@ -570,16 +571,48 @@ function SupportTicketsPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="ticket-message" className="text-sm font-medium">Message</Label>
-                <textarea 
-                  id="ticket-message" 
+                <textarea
+                  id="ticket-message"
                   className="flex min-h-37.5 w-full rounded-md border border-input bg-transparent px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={message} 
-                  onChange={(e) => setMessage(e.target.value)} 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   placeholder="Please provide detailed information about your question or issue. The more details you provide, the better we can assist you."
-                  required 
+                  required
                 />
               </div>
-              
+
+              <div className="space-y-2">
+                <Label htmlFor="ticket-attachments" className="text-sm font-medium">Attach photos (optional)</Label>
+                <Input
+                  id="ticket-attachments"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    setAttachments((prev) => [...prev, ...files].slice(0, 5));
+                  }}
+                />
+                <p className="text-muted-foreground text-xs">JPEG, PNG, GIF or WebP. Max 5 images, 5MB each.</p>
+                {attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {attachments.map((file, idx) => (
+                      <div key={idx} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={URL.createObjectURL(file)} alt={`Attachment ${idx + 1}`} className="h-16 w-16 rounded-md border object-cover" />
+                        <button
+                          type="button"
+                          className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs"
+                          onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
                 <Button type="submit" disabled={createMut.isLoading} className="gap-2 min-w-30">
@@ -631,6 +664,7 @@ function SupportTicketsPage() {
 function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () => void }) {
   const { data: ticket, isLoading } = useMyTicketQuery(ticketId);
   const [reply, setReply] = useState("");
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [sendReply, replyMut] = useReplyToTicketMutation();
 
   const priorityToHelpType: Record<string, string> = {
@@ -643,8 +677,9 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
     e.preventDefault();
     if (!reply.trim()) return;
     try {
-      await sendReply({ id: ticketId, body: { message: reply } }).unwrap();
+      await sendReply({ id: ticketId, body: { message: reply, attachments: replyAttachments } }).unwrap();
       setReply("");
+      setReplyAttachments([]);
       toast.success("Reply sent successfully.");
     } catch (error) {
       toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
@@ -771,6 +806,16 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
                       
                       <div className="relative p-5">
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {msg.attachments.map((url, idx) => (
+                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={url} alt={`Attachment ${idx + 1}`} className="h-24 w-24 rounded-lg border object-cover transition-opacity hover:opacity-80" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -808,6 +853,37 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
                   </div>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="reply-attachments" className="text-sm font-medium">Attach photos (optional)</Label>
+                <Input
+                  id="reply-attachments"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    setReplyAttachments((prev) => [...prev, ...files].slice(0, 5));
+                  }}
+                />
+                {replyAttachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {replyAttachments.map((file, idx) => (
+                      <div key={idx} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={URL.createObjectURL(file)} alt={`Attachment ${idx + 1}`} className="h-16 w-16 rounded-md border object-cover" />
+                        <button
+                          type="button"
+                          className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs"
+                          onClick={() => setReplyAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-xs">
                   Our team typically responds within 24 hours

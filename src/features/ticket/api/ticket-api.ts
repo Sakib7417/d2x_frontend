@@ -30,13 +30,21 @@ export const ticketApi = baseApi.injectEndpoints({
     }),
 
     createTicket: builder.mutation<Ticket, CreateTicketPayload>({
-      query: (body) => ({ url: bff("/tickets"), method: "POST", body }),
+      query: (body) => ({
+        url: bff("/tickets"),
+        method: "POST",
+        body: buildTicketFormData(body),
+      }),
       transformResponse: (response: ApiSuccess<Ticket>) => response.data,
       invalidatesTags: [listTag("Ticket")],
     }),
 
     replyToTicket: builder.mutation<unknown, { id: UUID; body: ReplyTicketPayload }>({
-      query: ({ id, body }) => ({ url: bff(`/tickets/${id}/reply`), method: "POST", body }),
+      query: ({ id, body }) => ({
+        url: bff(`/tickets/${id}/reply`),
+        method: "POST",
+        body: buildTicketFormData(body),
+      }),
       invalidatesTags: [listTag("Ticket")],
     }),
 
@@ -58,7 +66,11 @@ export const ticketApi = baseApi.injectEndpoints({
     }),
 
     adminReply: builder.mutation<unknown, { id: UUID; body: ReplyTicketPayload }>({
-      query: ({ id, body }) => ({ url: bff(`/tickets/admin/${id}/reply`), method: "POST", body }),
+      query: ({ id, body }) => ({
+        url: bff(`/tickets/admin/${id}/reply`),
+        method: "POST",
+        body: buildTicketFormData(body),
+      }),
       invalidatesTags: [listTag("Ticket")],
     }),
 
@@ -86,3 +98,28 @@ export const {
   useCloseTicketMutation,
   useReopenTicketMutation,
 } = ticketApi;
+
+/**
+ * Build a `FormData` payload for ticket create/reply.
+ *
+ * The backend always expects `multipart/form-data` on these routes (multer
+ * runs before the validator). Text fields are appended as strings; each file
+ * in `attachments` is appended under the `attachments` field name, which
+ * multer reads as `upload.array('attachments')`. When no files are present
+ * we still send FormData — the backend handles the empty files array fine.
+ */
+function buildTicketFormData(
+  body: CreateTicketPayload | ReplyTicketPayload,
+): FormData {
+  const form = new FormData();
+  if ("subject" in body && body.subject !== undefined) form.set("subject", body.subject);
+  if ("priority" in body && body.priority !== undefined) form.set("priority", body.priority);
+  form.set("message", body.message);
+
+  const files = body.attachments ?? [];
+  for (const file of files) {
+    form.append("attachments", file);
+  }
+
+  return form;
+}

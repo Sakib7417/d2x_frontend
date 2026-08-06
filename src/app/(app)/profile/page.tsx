@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Mail, Save, ShieldCheck, UserRound, Copy, Check } from "lucide-react";
+import { CalendarDays, Mail, Save, ShieldCheck, UserRound, Copy, Check, IdCard } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -245,9 +245,76 @@ export default function ProfilePage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Government ID (KYC) — shows the photos uploaded at signup */}
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IdCard className="size-5 text-(--logo-gold-300)" />
+                Government ID
+              </CardTitle>
+              <CardDescription>
+                Your uploaded ID photos for account verification.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading || !profile ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-8 w-full" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="aspect-[4/3] w-full" />
+                    <Skeleton className="aspect-[4/3] w-full" />
+                  </div>
+                </div>
+              ) : profile.govIdType || profile.govIdFrontUrl || profile.govIdBackUrl ? (
+                <div className="space-y-4">
+                  {profile.govIdType ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">ID type</span>
+                      <span className="text-sm font-medium">{humanizeEnum(profile.govIdType)}</span>
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-4">
+                    <ProfileKycImage label="Front" url={profile.govIdFrontUrl} />
+                    <ProfileKycImage label="Back" url={profile.govIdBackUrl} />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  No government ID on file. This is optional for existing accounts.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </>
+  );
+}
+
+function ProfileKycImage({ label, url }: { label: string; url?: string | null }) {
+  if (!url) {
+    return (
+      <div className="space-y-1.5">
+        <p className="text-muted-foreground text-xs font-medium">{label}</p>
+        <div className="bg-muted flex aspect-[4/3] items-center justify-center rounded-lg border">
+          <span className="text-muted-foreground text-xs">Not provided</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1.5">
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={`${label} of your government ID`}
+          className="aspect-[4/3] w-full rounded-lg border object-cover transition-opacity hover:opacity-80"
+        />
+      </a>
+    </div>
   );
 }
 

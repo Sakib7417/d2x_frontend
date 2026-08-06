@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { notFound, usePathname } from "next/navigation";
+import { notFound, usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   Bell,
@@ -17,6 +17,8 @@ import {
   Trophy,
   Users,
   WalletCards,
+  ArrowLeft,
+  IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
 import {
   useAdminAnalyticsQuery,
@@ -48,6 +51,7 @@ import {
   useAdminSettingsQuery,
   useAdminTradeScheduleQuery,
   useAdminTradesQuery,
+  useAdminUserDetailQuery,
   useAdminUsersQuery,
   useAdminWalletsQuery,
   useAdminWithdrawalsQuery,
@@ -82,7 +86,7 @@ import {
   useCloseTicketMutation,
   useReopenTicketMutation,
 } from "@/features/ticket/api/ticket-api";
-import type { Paginated } from "@/types/api";
+import type { Paginated, UUID } from "@/types/api";
 import type {
   AppNotification,
   AuditLog,
@@ -120,6 +124,7 @@ interface ListPageProps<T> {
   useListQuery: (params: AdminListParams) => QueryResult<T>;
   getRowId: (row: T, index: number) => string;
   statusOptions?: string[];
+  onRowClick?: (row: T) => void;
 }
 
 function person(user: User | UserRef | null | undefined, fallback?: string) {
@@ -162,6 +167,7 @@ function AdminListPage<T>({
   useListQuery,
   getRowId,
   statusOptions = [],
+  onRowClick,
 }: ListPageProps<T>) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -221,6 +227,7 @@ function AdminListPage<T>({
         error={error}
         onRetry={result.refetch}
         getRowId={getRowId}
+        onRowClick={onRowClick}
         renderMobileCard={(row, index) => mobileCard(columns, row, index)}
         emptyState={{
           icon,
@@ -268,6 +275,7 @@ const usersColumns: Array<DataTableColumn<User>> = [
   { id: "creator", header: "Content", cell: (row) => <ContentCreatorToggle user={row} /> },
   { id: "country", header: "Country", cell: (row) => row.country || "—", hideBelow: "lg" },
   { id: "joined", header: "Joined", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
+  { id: "kyc", header: "KYC", cell: (row) => (row.govIdType ? <StatusBadge status="ACTIVE" showIcon={false} /> : <span className="text-muted-foreground text-xs">—</span>) },
 ];
 
 const depositsColumns: Array<DataTableColumn<Deposit>> = [
@@ -1114,6 +1122,7 @@ function AdminTicketsPage() {
 function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () => void }) {
   const { data: ticket, isLoading } = useAdminTicketQuery(ticketId as any);
   const [reply, setReply] = useState("");
+  const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [sendReply, replyMut] = useAdminReplyMutation();
   const [close, closeMut] = useCloseTicketMutation();
   const [reopen, reopenMut] = useReopenTicketMutation();
@@ -1122,8 +1131,9 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
     e.preventDefault();
     if (!reply.trim()) return;
     try {
-      await sendReply({ id: ticketId as any, body: { message: reply } }).unwrap();
+      await sendReply({ id: ticketId as any, body: { message: reply, attachments: replyAttachments } }).unwrap();
       setReply("");
+      setReplyAttachments([]);
       toast.success("Reply sent.");
     } catch (error) {
       toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
@@ -1160,12 +1170,51 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
               <span className="text-muted-foreground text-xs">{new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(msg.createdAt))}</span>
             </div>
             <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+            {msg.attachments && msg.attachments.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {msg.attachments.map((url, idx) => (
+                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Attachment ${idx + 1}`} className="h-24 w-24 rounded-lg border object-cover transition-opacity hover:opacity-80" />
+                  </a>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
       {ticket.status !== "CLOSED" && (
         <Card><CardHeader><CardTitle>Reply</CardTitle></CardHeader><CardContent><form onSubmit={handleReply} className="space-y-3">
           <textarea className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Type your reply…" required />
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Attach photos (optional)</Label>
+            <Input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? []);
+                setReplyAttachments((prev) => [...prev, ...files].slice(0, 5));
+              }}
+            />
+            {replyAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {replyAttachments.map((file, idx) => (
+                  <div key={idx} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={URL.createObjectURL(file)} alt={`Attachment ${idx + 1}`} className="h-16 w-16 rounded-md border object-cover" />
+                    <button
+                      type="button"
+                      className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs"
+                      onClick={() => setReplyAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Button type="submit" disabled={replyMut.isLoading}>{replyMut.isLoading ? "Sending…" : "Send reply"}</Button>
         </form></CardContent></Card>
       )}
@@ -1173,14 +1222,157 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
   </>;
 }
 
+/**
+ * Admin user detail page — shows the full user record including their
+ * government ID photos (front + back) for KYC review.
+ *
+ * Reached via /admin/users/:id. The user list table doesn't yet have a
+ * clickable row, so this page is reachable by URL for now. The KYC card
+ * renders the two uploaded images via the same /uploads/* rewrite that
+ * post images use.
+ */
+function AdminUserDetailPage({ userId }: { userId: UUID }) {
+  const { data: user, error, isLoading, refetch } = useAdminUserDetailQuery(userId);
+  const normalizedError = normalizeError(error);
+
+  return (
+    <>
+      <PageHeader
+        title="User detail"
+        description="Review member account and government ID verification."
+        breadcrumbs={[
+          { label: "Admin", href: ROUTES.admin.dashboard },
+          { label: "Users", href: ROUTES.admin.users },
+          { label: user?.name || user?.email || "Detail" },
+        ]}
+      />
+
+      <div className="mb-4">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+          <ArrowLeft className="size-4" />
+          Back to users
+        </Button>
+      </div>
+
+      {normalizedError ? (
+        <ErrorState error={normalizedError} onRetry={refetch} />
+      ) : isLoading || !user ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          {/* Account details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account</CardTitle>
+              <CardDescription>Identity and membership details.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <DetailRow label="Name" value={user.name || "—"} />
+              <DetailRow label="Email" value={user.email} />
+              <DetailRow label="Phone" value={user.phone || "—"} />
+              <DetailRow label="Country" value={user.country || "—"} />
+              <DetailRow label="Role" value={humanizeEnum(user.role)} />
+              <DetailRow label="Rank" value={humanizeEnum(user.rank)} />
+              <DetailRow label="Referral code" value={user.referralCode} />
+              <DetailRow label="Wallet address" value={user.walletAddress || "—"} />
+              <div className="flex items-center justify-between border-t pt-3">
+                <span className="text-muted-foreground text-sm">Status</span>
+                <StatusBadge status={user.status} />
+              </div>
+              <DetailRow label="Joined" value={formatDateTime(user.createdAt)} />
+              <DetailRow label="Last login" value={user.lastLogin ? formatDateTime(user.lastLogin) : "—"} />
+            </CardContent>
+          </Card>
+
+          {/* KYC verification */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IdCard className="size-5 text-(--logo-gold-300)" />
+                Government ID (KYC)
+              </CardTitle>
+              <CardDescription>
+                Photos uploaded at signup. Click to open full size.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {user.govIdType || user.govIdFrontUrl || user.govIdBackUrl ? (
+                <div className="space-y-4">
+                  {user.govIdType ? (
+                    <DetailRow label="ID type" value={humanizeEnum(user.govIdType)} />
+                  ) : null}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <KycImage label="Front side" url={user.govIdFrontUrl} />
+                    <KycImage label="Back side" url={user.govIdBackUrl} />
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={IdCard}
+                  title="No ID uploaded"
+                  description="This user signed up before KYC was mandatory."
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-muted-foreground text-sm">{label}</span>
+      <span className="text-sm font-medium text-right break-all">{value}</span>
+    </div>
+  );
+}
+
+function KycImage({ label, url }: { label: string; url?: string | null }) {
+  if (!url) {
+    return (
+      <div className="space-y-2">
+        <p className="text-muted-foreground text-xs font-medium">{label}</p>
+        <div className="bg-muted flex aspect-[4/3] items-center justify-center rounded-lg border">
+          <span className="text-muted-foreground text-xs">Not provided</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={`${label} of government ID`}
+          className="aspect-[4/3] w-full rounded-lg border object-cover transition-opacity hover:opacity-80"
+        />
+      </a>
+    </div>
+  );
+}
+
 export default function AdminModulePage() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Dynamic route: /admin/users/:id -> user detail page
+  const userDetailMatch = pathname.match(/^\/admin\/users\/([^/]+)$/);
+  if (userDetailMatch) {
+    return <AdminUserDetailPage userId={userDetailMatch[1] as UUID} />;
+  }
 
   switch (pathname) {
     case ROUTES.admin.analytics:
       return <AnalyticsPage />;
     case ROUTES.admin.users:
-      return <AdminListPage title="Users" description="Review member accounts, access, rank, and activity." icon={Users} columns={usersColumns} useListQuery={useAdminUsersQuery} getRowId={(row) => row.id} statusOptions={["ACTIVE", "INACTIVE", "SUSPENDED"]} />;
+      return <AdminListPage title="Users" description="Review member accounts, access, rank, and activity." icon={Users} columns={usersColumns} useListQuery={useAdminUsersQuery} getRowId={(row) => row.id} statusOptions={["ACTIVE", "INACTIVE", "SUSPENDED"]} onRowClick={(row) => router.push(ROUTES.admin.user(row.id))} />;
     case ROUTES.admin.deposits:
       return <AdminListPage title="Deposits" description="Monitor submitted deposits and verification state." icon={Activity} columns={depositsColumns} useListQuery={useAdminDepositsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "VERIFIED", "APPROVED", "REJECTED", "FAILED"]} />;
     case ROUTES.admin.withdrawals:

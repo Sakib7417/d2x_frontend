@@ -72,6 +72,18 @@ export const adminApi = baseApi.injectEndpoints({
         fromInlineEnvelope<User>(response, "users"),
       providesTags: (result) => listTags("User", result?.items),
     }),
+    /**
+     * Single user detail (admin). Returns the full user record including
+     * government ID photos for KYC review.
+     */
+    adminUserDetail: builder.query<User, UUID>({
+      query: (userId) => bff(`/admin/users/${userId}`),
+      transformResponse: (response: ApiSuccess<User>) => response.data,
+      providesTags: (result) =>
+        result
+          ? [listTag("User"), { type: "User" as const, id: result.id }]
+          : [listTag("User")],
+    }),
     adminDeposits: builder.query<Paginated<Deposit>, AdminListParams>({
       query: (params) => listQuery("/admin/deposits", params),
       transformResponse: (response: unknown) =>
@@ -201,6 +213,7 @@ export const {
   useAdminDashboardQuery,
   useAdminAnalyticsQuery,
   useAdminUsersQuery,
+  useAdminUserDetailQuery,
   useAdminDepositsQuery,
   useAdminWithdrawalsQuery,
   useAdminTradesQuery,

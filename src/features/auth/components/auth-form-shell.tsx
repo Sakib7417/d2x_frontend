@@ -77,11 +77,13 @@ export function AuthSubmitButton({
   loading,
   disabled,
   loadingLabel,
+  className,
 }: {
   children: ReactNode;
   loading?: boolean;
   disabled?: boolean;
   loadingLabel?: string;
+  className?: string;
 }) {
   return (
     <Button
@@ -90,7 +92,7 @@ export function AuthSubmitButton({
       // `disabled` while loading prevents the double-submit that, on signup,
       // produces a duplicate-email 409 on the user's own second click.
       disabled={loading || disabled}
-      className="w-full"
+      className={cn("w-full", className)}
     >
       {loading && <Loader2 className="size-4 animate-spin" />}
       {loading ? (loadingLabel ?? "Please wait…") : children}

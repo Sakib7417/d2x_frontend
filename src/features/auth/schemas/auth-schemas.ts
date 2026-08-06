@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ALL_GOV_ID_TYPES, type GovIdType } from "@/types/enums";
+
 /**
  * Client-side validation schemas.
  *
@@ -135,6 +137,41 @@ export const signupSchema = z
       .optional(),
     referralCode: z.union([referralCode, z.literal("")]).optional(),
     walletAddress: z.union([walletAddress, z.literal("")]).optional(),
+    /**
+     * Government ID type — mandatory at signup. Mirrors the backend's
+     * `z.enum(GOV_ID_TYPES)` in auth.validator.ts.
+     */
+    govIdType: z.enum(ALL_GOV_ID_TYPES as [GovIdType, ...GovIdType[]], {
+      message: "Select a government ID type",
+    }),
+    /**
+     * Front-side photo of the chosen ID. Mandatory at signup.
+     * `instanceof File` would fail under React Native / non-browser runtimes,
+     * but this form is browser-only, so it's safe.
+     */
+    govIdFront: z
+      .instanceof(File, { message: "Upload the front side of your ID" })
+      .refine((file) => file.size > 0, "Upload the front side of your ID")
+      .refine(
+        (file) => file.size <= 5 * 1024 * 1024,
+        "Image must be 5MB or smaller",
+      )
+      .refine(
+        (file) => /image\/(jpeg|jpg|png|gif|webp)/i.test(file.type),
+        "Only JPEG, PNG, GIF or WebP images are allowed",
+      ),
+    /** Back-side photo of the chosen ID. Mandatory at signup. */
+    govIdBack: z
+      .instanceof(File, { message: "Upload the back side of your ID" })
+      .refine((file) => file.size > 0, "Upload the back side of your ID")
+      .refine(
+        (file) => file.size <= 5 * 1024 * 1024,
+        "Image must be 5MB or smaller",
+      )
+      .refine(
+        (file) => /image\/(jpeg|jpg|png|gif|webp)/i.test(file.type),
+        "Only JPEG, PNG, GIF or WebP images are allowed",
+      ),
     /** Client-only. */
     acceptTerms: z.literal(true, {
       message: "You must accept the terms to continue",
@@ -151,33 +188,31 @@ export type SignupFormValues = z.input<typeof signupSchema>;
 export type SignupFormOutput = z.output<typeof signupSchema>;
 
 /**
- * Strip client-only fields and drop empty optionals.
+ * Build the multipart FormData payload for signup.
  *
- * Sending `phone: ""` would fail the backend's regex — its optional fields
- * reject empty strings rather than treating them as absent. Every optional
- * must therefore be omitted entirely when blank, not sent as "".
+ * The backend now expects `multipart/form-data` with text fields plus two
+ * file fields (`govIdFront`, `govIdBack`). Empty optionals are omitted entirely
+ * rather than sent as "" — the backend's optional fields reject empty strings.
+ *
+ * `confirmPassword`, `acceptTerms` and the `File` objects themselves are not
+ * appended as text; the files are appended as the actual file parts.
  */
-export function toSignupRequest(values: SignupFormOutput) {
-  const payload: Record<string, string> = {
-    name: values.name,
-    email: values.email,
-    password: values.password,
-  };
+export function toSignupRequest(values: SignupFormOutput): FormData {
+  const form = new FormData();
+  form.set("name", values.name);
+  form.set("email", values.email);
+  form.set("password", values.password);
+  form.set("govIdType", values.govIdType);
 
-  if (values.phone) payload.phone = values.phone;
-  if (values.country) payload.country = values.country;
-  if (values.referralCode) payload.referralCode = values.referralCode;
-  if (values.walletAddress) payload.walletAddress = values.walletAddress;
+  if (values.phone) form.set("phone", values.phone);
+  if (values.country) form.set("country", values.country);
+  if (values.referralCode) form.set("referralCode", values.referralCode);
+  if (values.walletAddress) form.set("walletAddress", values.walletAddress);
 
-  return payload as {
-    name: string;
-    email: string;
-    password: string;
-    phone?: string;
-    country?: string;
-    referralCode?: string;
-    walletAddress?: string;
-  };
+  form.set("govIdFront", values.govIdFront);
+  form.set("govIdBack", values.govIdBack);
+
+  return form;
 }
 
 /* -------------------------------------------------------------------------- */

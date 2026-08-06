@@ -24,15 +24,12 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface SignupRequest {
-  email: string;
-  password: string;
-  name?: string;
-  phone?: string;
-  country?: string;
-  referralCode?: string;
-  walletAddress?: string;
-}
+/**
+ * Signup payload is `multipart/form-data` because it carries two government ID
+ * photos (`govIdFront`, `govIdBack`) alongside the text fields. Built by
+ * `toSignupRequest` in the auth schemas.
+ */
+export type SignupRequest = FormData;
 
 interface AuthPayload {
   user: AuthUser | null;

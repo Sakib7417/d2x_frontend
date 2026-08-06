@@ -216,6 +216,22 @@ export const AdminUserAction = {
 export type AdminUserAction =
   (typeof AdminUserAction)[keyof typeof AdminUserAction];
 
+/**
+ * Government ID types accepted at signup for KYC.
+ * Mirrors `GovIdType` enum in the backend Prisma schema.
+ */
+export const GovIdType = {
+  AADHAAR: "AADHAAR",
+  PAN: "PAN",
+  PASSPORT: "PASSPORT",
+  DRIVING_LICENSE: "DRIVING_LICENSE",
+  VOTER_ID: "VOTER_ID",
+} as const;
+export type GovIdType = (typeof GovIdType)[keyof typeof GovIdType];
+
+/** Ordered for display in the signup <Select>. */
+export const ALL_GOV_ID_TYPES = Object.values(GovIdType);
+
 /* -------------------------------------------------------------------------- */
 /* Iteration helpers — drive <Select> options and filter chips.               */
 /* Ordered for display, not alphabetically.                                    */
