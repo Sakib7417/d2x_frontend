@@ -1,10 +1,10 @@
 import React from "react";
-import { Telegram, Twitter, Youtube, Globe } from "lucide-react";
+import { Send, Share2, Play, Globe } from "lucide-react";
 
 const socials = [
-  { name: "Telegram", href: "#", Icon: Telegram },
-  { name: "Twitter", href: "#", Icon: Twitter },
-  { name: "YouTube", href: "#", Icon: Youtube },
+  { name: "Telegram", href: "#", Icon: Send },
+  { name: "Twitter", href: "#", Icon: Share2 },
+  { name: "YouTube", href: "#", Icon: Play },
   { name: "Website", href: "#", Icon: Globe },
 ];
 

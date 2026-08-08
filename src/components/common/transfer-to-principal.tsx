@@ -78,8 +78,9 @@ export function TransferToPrincipal() {
 
       setAmount("");
       setFromType("");
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Transfer failed");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Transfer failed";
+      toast.error(errorMessage);
     }
   };
 

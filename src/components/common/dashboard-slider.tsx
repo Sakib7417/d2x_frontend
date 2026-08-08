@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Newspaper, ImageOff } from "lucide-react";
 import { usePublicPostsQuery, usePublicNewsQuery, postImageUrl } from "@/features/content/api/content-api";
-import type { Post, NewsItem } from "@/types/models";
 
 const SLIDE_INTERVAL = 5000; // 5 seconds
 
@@ -77,14 +77,6 @@ export function DashboardSlider() {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
-    const handleScroll = () => {
-      const itemWidth = scrollContainer.querySelector('[data-slide]')?.clientWidth || 400;
-      const gap = 16; // gap-4 = 16px
-      const scrollPosition = scrollContainer.scrollLeft;
-      const newIndex = Math.round(scrollPosition / (itemWidth + gap));
-      setCurrentIndex(Math.max(0, Math.min(newIndex, posts.length - 1)));
-    };
-
     // Only add scroll listener if we're using actual scrolling
     // For the 3-item view, we use state-based navigation instead
     return () => {};
@@ -127,13 +119,12 @@ export function DashboardSlider() {
                   }}
                 >
                   {post.imageUrl ? (
-                    <img
+                    <Image
                       src={postImageUrl(post.imageUrl)}
                       alt={post.title}
-                      className="aspect-video w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex aspect-video w-full items-center justify-center bg-muted">
@@ -164,13 +155,12 @@ export function DashboardSlider() {
                   }}
                 >
                   {post.imageUrl ? (
-                    <img
+                    <Image
                       src={postImageUrl(post.imageUrl)}
                       alt={post.title}
-                      className="aspect-video w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex aspect-video w-full items-center justify-center bg-muted">
@@ -214,13 +204,12 @@ export function DashboardSlider() {
                   }}
                 >
                   {post.imageUrl ? (
-                    <img
+                    <Image
                       src={postImageUrl(post.imageUrl)}
                       alt={post.title}
-                      className="aspect-video w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex aspect-video w-full items-center justify-center bg-muted">

@@ -9,7 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import type { PreloadedState } from "@/store";
 import ContextProvider from '@/context'
-import { Web3Provider } from "./web3-provider.tsx"
+import { Web3Provider } from "./web3-provider"
 
 /**
  * Root provider composition.

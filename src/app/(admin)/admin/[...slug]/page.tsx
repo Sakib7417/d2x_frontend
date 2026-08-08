@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Activity,
   Bell,
@@ -9,7 +10,6 @@ import {
   ChartLine,
   ClipboardList,
   Clock,
-  Coins,
   Medal,
   Network,
   Search,
@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
+import { PoolBonusRequestStatus } from "@/types/enums";
 import {
   useAdminAnalyticsQuery,
   useAdminAuditLogsQuery,
@@ -244,10 +245,10 @@ function AdminListPage<T>({
   );
 }
 
-function ContentCreatorToggle({ user }: { user: User }) {
+function ContentCreatorToggle({ user }: { user: User & { isContentCreator?: boolean } }) {
   const [toggle, { isLoading }] = useToggleContentCreatorMutation();
   if (user.role === "ADMIN") return <span className="text-muted-foreground text-xs">Admin</span>;
-  const isCreator = (user as any).isContentCreator === true;
+  const isCreator = user.isContentCreator === true;
   return (
     <Button
       size="sm"
@@ -674,8 +675,8 @@ function AnalyticsPage() {
 
 function PoolBonusRequestsPage() {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("");
-  const result = useAdminPoolBonusRequestsQuery({ page, limit: 20, status: (status || undefined) as any });
+  const [status, setStatus] = useState<PoolBonusRequestStatus | "">("");
+  const result = useAdminPoolBonusRequestsQuery({ page, limit: 20, status: status || undefined });
   const [approve, approveMutation] = useApprovePoolBonusRequestMutation();
   const [updateApprove, updateMutation] = useUpdatePoolBonusRequestMutation();
   const [reject, rejectMutation] = useRejectPoolBonusRequestMutation();
@@ -745,7 +746,7 @@ function PoolBonusRequestsPage() {
       <PageHeader title="Pool Bonus Requests" description="Review and approve, reject, or update pool bonus transfer/withdrawal requests from users." />
       <div className="mb-4 flex items-center gap-3">
         <Label htmlFor="pool-status-filter" className="text-sm">Filter:</Label>
-        <select id="pool-status-filter" className="border-input bg-background h-9 rounded-md border px-3 text-sm" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+        <select id="pool-status-filter" className="border-input bg-background h-9 rounded-md border px-3 text-sm" value={status} onChange={(e) => { setStatus(e.target.value as PoolBonusRequestStatus | ""); setPage(1); }}>
           <option value="">All</option>
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
@@ -833,7 +834,7 @@ function PoolBonusRequestsPage() {
 /* -------------------------------------------------------------------------- */
 
 function AdminPostsPage() {
-  const { data, isLoading, isFetching, error, refetch } = useAdminPostsQuery({ limit: 50 });
+  const { data, isLoading } = useAdminPostsQuery({ limit: 50 });
   const [create, createMut] = useCreatePostMutation();
   const [update, updateMut] = useUpdatePostMutation();
   const [del, deleteMut] = useDeletePostMutation();
@@ -948,7 +949,7 @@ function AdminPostsPage() {
             <Card key={post.id}>
               <div className="relative aspect-video overflow-hidden rounded-t-xl">
                 {post.imageUrl && (
-                  <img src={postImageUrl(post.imageUrl)} alt={post.title} className="size-full object-cover" />
+                  <Image src={postImageUrl(post.imageUrl)} alt={post.title} fill className="object-cover" unoptimized />
                 )}
                 <div className="absolute top-2 right-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${post.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>
@@ -1120,7 +1121,7 @@ function AdminTicketsPage() {
 }
 
 function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () => void }) {
-  const { data: ticket, isLoading } = useAdminTicketQuery(ticketId as any);
+  const { data: ticket, isLoading } = useAdminTicketQuery(ticketId as UUID);
   const [reply, setReply] = useState("");
   const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [sendReply, replyMut] = useAdminReplyMutation();
@@ -1131,7 +1132,7 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
     e.preventDefault();
     if (!reply.trim()) return;
     try {
-      await sendReply({ id: ticketId as any, body: { message: reply, attachments: replyAttachments } }).unwrap();
+      await sendReply({ id: ticketId as UUID, body: { message: reply, attachments: replyAttachments } }).unwrap();
       setReply("");
       setReplyAttachments([]);
       toast.success("Reply sent.");
@@ -1141,11 +1142,11 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
   }
 
   async function handleClose() {
-    try { await close(ticketId as any).unwrap(); toast.success("Ticket closed."); } catch (error) { toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message); }
+    try { await close(ticketId as UUID).unwrap(); toast.success("Ticket closed."); } catch (error) { toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message); }
   }
 
   async function handleReopen() {
-    try { await reopen(ticketId as any).unwrap(); toast.success("Ticket reopened."); } catch (error) { toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message); }
+    try { await reopen(ticketId as UUID).unwrap(); toast.success("Ticket reopened."); } catch (error) { toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message); }
   }
 
   if (isLoading || !ticket) return <><Button variant="ghost" onClick={onBack}>← Back</Button><p className="text-muted-foreground">Loading…</p></>;

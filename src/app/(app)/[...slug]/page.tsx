@@ -2,7 +2,8 @@
 
 import { use, useState, type FormEvent, type ReactNode } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRight, Bell, ChartCandlestick, Clock, Copy, Check, Gift, Network, ShieldCheck, Trophy, TrendingUp, Users, Wallet, AlertTriangle, MessageSquare, Send, LifeBuoy, ChevronRight, HelpCircle, Mail, FileText } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Bell, ChartCandlestick, Clock, Copy, Check, Gift, ShieldCheck, Trophy, TrendingUp, Users, Wallet, AlertTriangle, MessageSquare, Send, LifeBuoy, ChevronRight, HelpCircle, Mail, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { NetworkTree } from "@/components/network/network-tree";
 
@@ -53,7 +54,8 @@ import {
 } from "@/features/content/api/content-api";
 import type { Post, NewsItem } from "@/types/models";
 import { WithdrawalWalletType, PoolBonusRequestType } from "@/types/enums";
-import type { AppNotification, CycleBonus, Deposit, Ledger, PoolBonusRequest, RankHistoryEntry, RecentTrade, Referral, ReferralBonus, ReferralTreeNode, Ticket, TicketMessage, Trade, Withdrawal } from "@/types/models";
+import type { UUID } from "@/types/api";
+import type { AppNotification, CycleBonus, Deposit, Ledger, PoolBonusRequest, RankHistoryEntry, RecentTrade, Referral, ReferralBonus, Ticket, TicketMessage, Trade, Withdrawal } from "@/types/models";
 import { ROUTES } from "@/config/routes";
 
 const date = (value: string | null | undefined) => value ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
@@ -547,7 +549,7 @@ function SupportTicketsPage() {
                       <button
                         key={option.value}
                         type="button"
-                        onClick={() => setHelpType(option.value as any)}
+                        onClick={() => setHelpType(option.value as "GENERAL_INQUIRY" | "TECHNICAL_SUPPORT" | "ACCOUNT_HELP" | "FEEDBACK")}
                         className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all ${
                           isSelected 
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
@@ -662,7 +664,7 @@ function SupportTicketsPage() {
 }
 
 function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () => void }) {
-  const { data: ticket, isLoading } = useMyTicketQuery(ticketId);
+  const { data: ticket, isLoading } = useMyTicketQuery(ticketId as UUID);
   const [reply, setReply] = useState("");
   const [replyAttachments, setReplyAttachments] = useState<File[]>([]);
   const [sendReply, replyMut] = useReplyToTicketMutation();
@@ -677,7 +679,7 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
     e.preventDefault();
     if (!reply.trim()) return;
     try {
-      await sendReply({ id: ticketId, body: { message: reply, attachments: replyAttachments } }).unwrap();
+      await sendReply({ id: ticketId as UUID, body: { message: reply, attachments: replyAttachments } }).unwrap();
       setReply("");
       setReplyAttachments([]);
       toast.success("Reply sent successfully.");
@@ -979,7 +981,7 @@ function MyPostsPage() {
       : posts.map((post) => (
         <Card key={post.id}>
           <div className="relative aspect-video overflow-hidden rounded-t-xl">
-            {post.imageUrl && <img src={postImageUrl(post.imageUrl)} alt={post.title} className="size-full object-cover" />}
+            {post.imageUrl && <Image src={postImageUrl(post.imageUrl)} alt={post.title} fill className="object-cover" unoptimized />}
             <div className="absolute top-2 right-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${post.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>{post.isActive ? "Active" : "Inactive"}</span></div>
           </div>
           <CardContent className="p-4"><h3 className="font-semibold">{post.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{post.description}</p>

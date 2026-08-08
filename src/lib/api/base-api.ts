@@ -45,7 +45,7 @@ const rawBaseQuery = fetchBaseQuery({
   credentials: "same-origin",
   prepareHeaders: (headers, api) => {
     // Let FormData set its own Content-Type (with boundary) — don't override.
-    const body = (api as any).body;
+    const body = (api as { body?: unknown }).body;
     if (!(body instanceof FormData) && !headers.has("content-type")) {
       headers.set("content-type", "application/json");
     }
