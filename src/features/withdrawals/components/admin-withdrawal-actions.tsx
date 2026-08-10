@@ -47,7 +47,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
   const { writeContract, data: hash, isPending: isWritePending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const [process, processMutation] = useProcessWithdrawalMutation();
+  const [processWithdrawal, processMutation] = useProcessWithdrawalMutation();
   const [reject, rejectMutation] = useRejectWithdrawalMutation();
 
   const [mode, setMode] = useState<"idle" | "reject" | "process">("idle");
@@ -67,7 +67,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
       setProcessedHash(hash);
       const complete = async () => {
         try {
-          await process({ id: withdrawal.id, transactionHash: hash }).unwrap();
+          await processWithdrawal({ id: withdrawal.id, transactionHash: hash }).unwrap();
           toast.success("Withdrawal approved and marked as completed.");
           setMode("idle");
         } catch (error) {
@@ -79,7 +79,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
       };
       complete();
     }
-  }, [isSuccess, hash, withdrawal.id, process, processedHash]);
+  }, [isSuccess, hash, withdrawal.id, processWithdrawal, processedHash]);
 
   const handleSend = async () => {
     if (!isConnected) {
