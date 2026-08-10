@@ -16,7 +16,7 @@ import type { WithdrawalStatus, WithdrawalWalletType } from "@/types/enums";
  */
 
 export interface CreateWithdrawalRequest {
-  amount: number;
+  amount: string;
   walletAddress: string;
   /**
    * Source wallet. Note this is `WithdrawalWalletType`, a strict subset of
@@ -75,21 +75,6 @@ export const withdrawalsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /* -- admin ------------------------------------------------------------- */
-
-    adminWithdrawals: builder.query<
-      Paginated<Withdrawal>,
-      AdminWithdrawalParams | void
-    >({
-      query: (params) => ({
-        url: bff("/withdrawals/admin/all"),
-        params: buildQuery({ ...(params ?? {}) }),
-      }),
-      transformResponse: (response: unknown) =>
-        fromMetaEnvelope<Withdrawal>(response),
-      providesTags: (result) => listTags("Withdrawal", result?.items),
-    }),
-
     /** Marks the payout as sent on-chain and records the transaction hash. */
     processWithdrawal: builder.mutation<
       Withdrawal,
@@ -143,7 +128,6 @@ export const {
   useWithdrawalsQuery,
   useWithdrawalStatisticsQuery,
   useWithdrawalQuery,
-  useAdminWithdrawalsQuery,
   useProcessWithdrawalMutation,
   useRejectWithdrawalMutation,
 } = withdrawalsApi;

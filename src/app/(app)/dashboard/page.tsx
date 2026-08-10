@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
   const referralLink =
     typeof window !== "undefined"
-      ? `${window.location.origin}${ROUTES.referralLanding(user?.referralCode ?? "")}`
+      ? `${window.location.origin}${ROUTES.referralLanding(dashboard.data?.profile?.referralCode ?? user?.referralCode ?? "")}`
       : "";
 
   const depositAddress = depositWallet.data?.address ?? null;

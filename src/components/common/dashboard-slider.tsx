@@ -90,7 +90,7 @@ export function DashboardSlider() {
         {/* 3D Carousel Container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 px-4 py-4 items-center justify-center"
+          className="flex h-full w-full gap-4 px-4 py-4 items-center justify-center"
           style={{ 
             cursor: isDragging ? "grabbing" : "grab",
             perspective: "1000px"
@@ -110,7 +110,7 @@ export function DashboardSlider() {
                 <div
                   key={0}
                   data-slide
-                  className="relative flex shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: "60%",
                     transform: "scale(1) translateZ(0)",
@@ -146,7 +146,7 @@ export function DashboardSlider() {
                 <div
                   key={index}
                   data-slide
-                  className="relative flex shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: "40%",
                     transform: "scale(1) translateZ(0)",
@@ -193,7 +193,7 @@ export function DashboardSlider() {
                 <div
                   key={index}
                   data-slide
-                  className="relative flex shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: isCenter ? "45%" : "25%",
                     transform: isCenter 

@@ -118,5 +118,5 @@ export const {
  */
 export function postImageUrl(relativePath: string): string {
   if (relativePath.startsWith("http")) return relativePath;
-  return relativePath; // same-origin — rewrite handles /uploads/* -> backend
+  return relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
 }

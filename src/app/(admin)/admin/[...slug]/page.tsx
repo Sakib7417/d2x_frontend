@@ -63,6 +63,7 @@ import {
 } from "@/lib/api/admin-api";
 import { normalizeError } from "@/lib/api/errors";
 import { formatCount, formatDateTime, humanizeEnum, truncateHex } from "@/lib/utils/format";
+import { AdminWithdrawalActions } from "@/features/withdrawals/components/admin-withdrawal-actions";
 import {
   useAdminPoolBonusRequestsQuery,
   useApprovePoolBonusRequestMutation,
@@ -289,12 +290,14 @@ const depositsColumns: Array<DataTableColumn<Deposit>> = [
 ];
 
 const withdrawalsColumns: Array<DataTableColumn<Withdrawal>> = [
-  { id: "user", header: "User", cell: (row) => identityCell(person(row.user, row.userId), truncateHex(row.destinationAddress)) },
+  { id: "user", header: "User", cell: (row) => identityCell(person(row.user, row.userId), row.user?.email) },
+  { id: "address", header: "Address", cell: (row) => <span className="font-mono text-xs">{truncateHex(row.destinationAddress)}</span>, nowrap: true },
   { id: "amount", header: "Net amount", cell: (row) => <Money value={row.netAmount} showCurrency size="sm" />, nowrap: true },
   { id: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
   { id: "wallet", header: "Wallet", cell: (row) => humanizeEnum(row.walletType) },
   { id: "network", header: "Network", cell: (row) => row.network },
   { id: "created", header: "Created", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
+  { id: "actions", header: "Actions", cell: (row) => <AdminWithdrawalActions withdrawal={row} />, align: "right", width: "w-40" },
 ];
 
 const tradesColumns: Array<DataTableColumn<Trade>> = [

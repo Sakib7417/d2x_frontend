@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Users, Search, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Users, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,329 +14,280 @@ interface NetworkTreeProps {
   className?: string;
 }
 
-interface TreeNodeProps {
-  node: ReferralTreeNode;
-  level: number;
-  isExpanded: boolean;
-  onToggle: (nodeId: string) => void;
-  isNodeExpanded: (nodeId: string) => boolean;
-  searchTerm: string;
-  matchedNodes: Set<string>;
+const levelColors: Record<number, string> = {
+  0: "from-amber-500/20 to-orange-500/20 border-amber-500/40",
+  1: "from-violet-500/20 to-purple-500/20 border-violet-500/40",
+  2: "from-emerald-500/20 to-teal-500/20 border-emerald-500/40",
+  3: "from-sky-500/20 to-cyan-500/20 border-sky-500/40",
+  4: "from-rose-500/20 to-pink-500/20 border-rose-500/40",
+};
+
+const badgeColors: Record<number, string> = {
+  0: "bg-amber-500/20 text-amber-200 border-amber-500/40",
+  1: "bg-violet-500/20 text-violet-200 border-violet-500/40",
+  2: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40",
+  3: "bg-sky-500/20 text-sky-200 border-sky-500/40",
+  4: "bg-rose-500/20 text-rose-200 border-rose-500/40",
+};
+
+function collectMatches(node: ReferralTreeNode, term: string, set: Set<string>) {
+  const t = term.toLowerCase();
+  if (
+    node.userId.toLowerCase().includes(t) ||
+    node.email?.toLowerCase().includes(t) ||
+    node.name?.toLowerCase().includes(t)
+  ) {
+    set.add(node.userId);
+  }
+  node.children.forEach((child) => collectMatches(child, term, set));
 }
 
-const levelColors = [
-  "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
-  "from-purple-500/20 to-pink-500/20 border-purple-500/30",
-  "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
-  "from-orange-500/20 to-amber-500/20 border-orange-500/30",
-  "from-rose-500/20 to-red-500/20 border-rose-500/30",
-];
+function collectAncestorsToExpand(
+  node: ReferralTreeNode,
+  matched: Set<string>,
+  expand: Set<string>,
+): boolean {
+  let hasMatchInBranch = matched.has(node.userId);
+  for (const child of node.children) {
+    if (collectAncestorsToExpand(child, matched, expand)) {
+      hasMatchInBranch = true;
+    }
+  }
+  if (hasMatchInBranch) {
+    expand.add(node.userId);
+  }
+  return hasMatchInBranch;
+}
 
-function TreeNode({ node, level, isExpanded, onToggle, isNodeExpanded, searchTerm, matchedNodes }: TreeNodeProps) {
+function TreeNode({
+  node,
+  level,
+  expanded,
+  onToggle,
+  matched,
+}: {
+  node: ReferralTreeNode;
+  level: number;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+  matched: Set<string>;
+}) {
   const hasChildren = node.children.length > 0;
-  const isMatched = matchedNodes.has(node.userId);
-  const shouldHighlight = searchTerm && isMatched;
-  const levelColor = levelColors[level % levelColors.length];
-
-  const nodeVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 }
-  };
+  const isMatched = matched.has(node.userId);
+  const color = levelColors[level % 5];
+  const badge = badgeColors[level % 5];
 
   return (
     <motion.div
-      variants={nodeVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={{ duration: 0.3, delay: level * 0.05 }}
-      className="relative"
-    >
-      {/* Connection Line */}
-      {level > 0 && (
-        <div className="absolute left-0 top-0 bottom-0 w-px bg-linear-to-b from-border via-border/50 to-transparent" />
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={() => hasChildren && onToggle(node.userId)}
+      className={cn(
+        "relative flex w-56 flex-col gap-2 rounded-2xl border p-4 shadow-sm transition-all duration-300 md:w-64",
+        "bg-linear-to-br backdrop-blur-sm",
+        color,
+        isMatched && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        "hover:shadow-lg hover:border-white/20",
+        hasChildren && "cursor-pointer",
       )}
-
-      {/* Node Card */}
-      <div className="relative mb-3">
-        {/* Horizontal connector */}
-        {level > 0 && (
-          <div className="absolute left-0 top-1/2 w-4 h-px bg-border" />
-        )}
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex items-start gap-3">
+        <div
           className={cn(
-            "relative inline-flex items-center gap-3 rounded-xl border p-4 transition-all duration-300",
-            "bg-linear-to-br backdrop-blur-sm",
-            levelColor,
-            shouldHighlight && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-            "hover:shadow-lg"
+            "flex shrink-0 size-10 items-center justify-center rounded-full",
+            "bg-linear-to-br from-primary/20 to-primary/5 border border-primary/20",
           )}
         >
-          {/* Expand/Collapse Button */}
-          {hasChildren && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggle(node.userId)}
-              className="h-8 w-8 p-0 shrink-0"
-            >
-              <motion.div
-                animate={{ rotate: isExpanded ? 90 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronRight className="size-4" />
-              </motion.div>
-            </Button>
-          )}
+          <Users className="size-5 text-primary" />
+        </div>
 
-          {/* Node Content */}
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Avatar */}
-            <div className={cn(
-              "flex shrink-0 size-10 items-center justify-center rounded-full",
-              "bg-linear-to-br from-primary/20 to-primary/5",
-              "border border-primary/20"
-            )}>
-              <Users className="size-5 text-primary" />
-            </div>
-
-            {/* Info */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-sm truncate">
-                  {node.name || node.userId.slice(0, 8)}
-                </p>
-                <span className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-medium",
-                  "bg-primary/10 text-primary"
-                )}>
-                  L{level}
-                </span>
-              </div>
-              {node.email && (
-                <p className="text-muted-foreground text-xs truncate mt-0.5">
-                  {node.email}
-                </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-semibold">
+              {node.name || node.userId.slice(0, 8)}
+            </p>
+            <span
+              className={cn(
+                "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
+                level === 0
+                  ? "bg-amber-500/20 text-amber-200 border-amber-500/40"
+                  : badge,
               )}
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-muted-foreground text-xs">
-                  {node.directReferrals} direct
-                </span>
-                {hasChildren && (
-                  <span className="text-muted-foreground text-xs">
-                    {node.children.length} children
-                  </span>
-                )}
-              </div>
-            </div>
+            >
+              {level === 0 ? "Root" : `L${level}`}
+            </span>
           </div>
+          {node.email && (
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {node.email}
+            </p>
+          )}
+          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+            <span>{node.directReferrals} direct</span>
+            {hasChildren && (
+              <span className="ml-auto">{node.children.length} children</span>
+            )}
+          </div>
+        </div>
 
-          {/* Glow effect */}
-          <div className={cn(
-            "absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300",
-            "bg-linear-to-r from-transparent via-white/10 to-transparent",
-            "pointer-events-none",
-            "group-hover:opacity-100"
-          )} />
-        </motion.div>
+        {hasChildren && (
+          <div className="shrink-0 text-muted-foreground">
+            {expanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </div>
+        )}
       </div>
+    </motion.div>
+  );
+}
 
-      {/* Children */}
+function TreeBranch({
+  node,
+  level,
+  onToggle,
+  expandedIds,
+  matched,
+}: {
+  node: ReferralTreeNode;
+  level: number;
+  onToggle: (id: string) => void;
+  expandedIds: Set<string>;
+  matched: Set<string>;
+}) {
+  const hasChildren = node.children.length > 0;
+  const expanded = expandedIds.has(node.userId);
+
+  return (
+    <div className="flex flex-col items-center">
+      <TreeNode
+        node={node}
+        level={level}
+        expanded={expanded}
+        onToggle={onToggle}
+        matched={matched}
+      />
+
       <AnimatePresence>
-        {isExpanded && hasChildren && (
+        {expanded && hasChildren && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="ml-6 pl-6 border-l border-border/30"
+            transition={{ duration: 0.25 }}
+            className="flex flex-col items-center"
           >
-            {node.children.map((child) => (
-              <TreeNode
-                key={child.userId}
-                node={child}
-                level={level + 1}
-                isExpanded={isNodeExpanded(child.userId)}
-                onToggle={onToggle}
-                isNodeExpanded={isNodeExpanded}
-                searchTerm={searchTerm}
-                matchedNodes={matchedNodes}
-              />
-            ))}
+            <div className="h-5 w-px bg-border/60" />
+            <div className="h-px w-full max-w-5xl bg-border/60" />
+            <div className="flex flex-wrap justify-center gap-8 px-4 pb-4 pt-0">
+              {node.children.map((child) => (
+                <div key={child.userId} className="flex flex-col items-center">
+                  <div className="h-5 w-px bg-border/60" />
+                  <TreeBranch
+                    node={child}
+                    level={level + 1}
+                    onToggle={onToggle}
+                    expandedIds={expandedIds}
+                    matched={matched}
+                  />
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
 export function NetworkTree({ data, className }: NetworkTreeProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set([data.userId]));
-  const [zoom, setZoom] = useState(1);
 
-  // Find all nodes matching search term
-  const matchedNodes = useMemo(() => {
+  const matched = useMemo(() => {
     if (!searchTerm) return new Set<string>();
-    
-    const matches = new Set<string>();
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    
-    function searchNode(node: ReferralTreeNode) {
-      if (
-        node.userId.toLowerCase().includes(lowerSearchTerm) ||
-        node.email?.toLowerCase().includes(lowerSearchTerm) ||
-        node.name?.toLowerCase().includes(lowerSearchTerm)
-      ) {
-        matches.add(node.userId);
-      }
-      node.children.forEach(searchNode);
-    }
-    
-    searchNode(data);
-    return matches;
+    const set = new Set<string>();
+    collectMatches(data, searchTerm, set);
+    return set;
   }, [data, searchTerm]);
 
-  // Auto-expand paths to matched nodes
-  useMemo(() => {
-    if (searchTerm && matchedNodes.size > 0) {
-      const pathsToExpand = new Set<string>();
-      
-      function findPath(node: ReferralTreeNode, path: string[]): boolean {
-        const currentPath = [...path, node.userId];
-        
-        if (matchedNodes.has(node.userId)) {
-          path.forEach(id => pathsToExpand.add(id));
-          return true;
-        }
-        
-        for (const child of node.children) {
-          if (findPath(child, currentPath)) {
-            pathsToExpand.add(node.userId);
-            return true;
-          }
-        }
-        
-        return false;
-      }
-      
-      findPath(data, []);
-      setExpandedNodes(pathsToExpand);
-    }
-  }, [searchTerm, matchedNodes, data]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    const set = new Set<string>();
+    set.add(data.userId);
+    return set;
+  });
 
-  const toggleNode = (nodeId: string) => {
-    setExpandedNodes(prev => {
+  useMemo(() => {
+    if (searchTerm && matched.size > 0) {
+      const toExpand = new Set<string>();
+      collectAncestorsToExpand(data, matched, toExpand);
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        toExpand.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+  }, [searchTerm, matched, data]);
+
+  const toggle = (id: string) => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(nodeId)) {
-        next.delete(nodeId);
-      } else {
-        next.add(nodeId);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  const isNodeExpanded = (nodeId: string) => expandedNodes.has(nodeId);
+  const expandAll = () => {
+    const all = new Set<string>();
+    function walk(node: ReferralTreeNode) {
+      all.add(node.userId);
+      node.children.forEach(walk);
+    }
+    walk(data);
+    setExpandedIds(all);
+  };
+
+  const collapseAll = () => {
+    setExpandedIds(new Set([data.userId]));
+  };
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Controls Bar */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            {/* Search */}
-            <div className="relative flex-1 w-full sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
               <Input
-                placeholder="Search members by ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by ID, name or email..."
                 className="pl-9"
               />
             </div>
-
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                disabled={zoom <= 0.5}
-              >
-                <ZoomOut className="size-4" />
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={expandAll}>
+                Expand
               </Button>
-              <span className="text-sm text-muted-foreground w-12 text-center">
-                {Math.round(zoom * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.min(2, zoom + 0.1))}
-                disabled={zoom >= 2}
-              >
-                <ZoomIn className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(1)}
-              >
-                <Maximize2 className="size-4" />
+              <Button variant="outline" size="sm" onClick={collapseAll}>
+                Collapse
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tree Container */}
-      <motion.div
-        animate={{ scale: zoom }}
-        transition={{ duration: 0.2 }}
-        className="origin-top"
-      >
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              <TreeNode
-                node={data}
-                level={0}
-                isExpanded={isNodeExpanded(data.userId)}
-                onToggle={toggleNode}
-                isNodeExpanded={isNodeExpanded}
-                searchTerm={searchTerm}
-                matchedNodes={matchedNodes}
-              />
-            </div>
-
-            {/* Empty State */}
-            {!searchTerm && data.children.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="size-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No network members yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Share your referral link to start building your network
-                </p>
-              </div>
-            )}
-
-            {/* No Results */}
-            {searchTerm && matchedNodes.size === 0 && (
-              <div className="text-center py-12">
-                <Search className="size-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No members found</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Try a different search term
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+      <div className="overflow-x-auto rounded-2xl border border-border/30 p-6">
+        <TreeBranch
+          node={data}
+          level={0}
+          onToggle={toggle}
+          expandedIds={expandedIds}
+          matched={matched}
+        />
+      </div>
     </div>
   );
 }
