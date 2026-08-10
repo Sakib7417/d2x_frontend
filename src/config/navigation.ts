@@ -156,12 +156,12 @@ export const USER_NAV: NavSection[] = [
         icon: Trophy,
         keywords: ["level", "lv1", "lv7", "tier", "promotion"],
       },
-      {
-        label: "Cycle Bonus",
-        href: ROUTES.cycleBonus,
-        icon: Medal,
-        keywords: ["10 day", "cycle", "reward"],
-      },
+      // {
+      //   label: "Cycle Bonus",
+      //   href: ROUTES.cycleBonus,
+      //   icon: Medal,
+      //   keywords: ["10 day", "cycle", "reward"],
+      // },
       {
         label: "Pool Bonus",
         href: ROUTES.poolBonus,
@@ -179,13 +179,13 @@ export const USER_NAV: NavSection[] = [
   {
     label: "Account",
     items: [
-      {
-        label: "Notifications",
-        href: ROUTES.notifications,
-        icon: Bell,
-        badge: "notifications",
-        keywords: ["alerts", "messages", "inbox"],
-      },
+      // {
+      //   label: "Notifications",
+      //   href: ROUTES.notifications,
+      //   icon: Bell,
+      //   badge: "notifications",
+      //   keywords: ["alerts", "messages", "inbox"],
+      // },
       {
         label: "Profile",
         href: ROUTES.profile,
@@ -276,12 +276,12 @@ export const ADMIN_NAV: NavSection[] = [
         icon: Trophy,
         keywords: ["levels", "promotions"],
       },
-      {
-        label: "Cycle Bonus",
-        href: ROUTES.admin.cycleBonusReports,
-        icon: Medal,
-        keywords: ["10 day", "payouts"],
-      },
+      // {
+      //   label: "Cycle Bonus",
+      //   href: ROUTES.admin.cycleBonusReports,
+      //   icon: Medal,
+      //   keywords: ["10 day", "payouts"],
+      // },
       {
         label: "Pool Bonus Requests",
         href: ROUTES.admin.poolBonusRequests,
@@ -317,12 +317,12 @@ export const ADMIN_NAV: NavSection[] = [
         icon: TicketIcon,
         keywords: ["help", "support", "questions", "user queries"],
       },
-      {
-        label: "Notifications",
-        href: ROUTES.admin.notifications,
-        icon: Bell,
-        keywords: ["broadcast", "alerts"],
-      },
+      // {
+      //   label: "Notifications",
+      //   href: ROUTES.admin.notifications,
+      //   icon: Bell,
+      //   keywords: ["broadcast", "alerts"],
+      // },
       {
         label: "Audit Logs",
         href: ROUTES.admin.auditLogs,

@@ -38,13 +38,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span>© {new Date().getFullYear()} DOLLAR2X</span>
             <Link
-              href="/legal/terms"
+              href=""
               className="hover:text-foreground transition-colors"
             >
               Terms
             </Link>
             <Link
-              href="/legal/privacy"
+              href=""
               className="hover:text-foreground transition-colors"
             >
               Privacy

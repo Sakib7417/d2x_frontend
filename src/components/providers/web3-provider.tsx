@@ -18,7 +18,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       metadata: {
         name: 'DOLLAR2X',
         description: 'Automated USDT trading platform',
-        url: typeof window !== 'undefined' ? window.location.origin : 'https://dollar2x.com',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://dollar2x.trades.com',
         icons: ['https://avatars.githubusercontent.com/u/37784886']
       },
       features: {
