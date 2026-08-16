@@ -34,7 +34,7 @@ yarn-error.log*
 .env*
 # ...but the template must be committed so a new dev knows what to set.
 !.env.example
-!.env
+
 
 # vercel
 .vercel
