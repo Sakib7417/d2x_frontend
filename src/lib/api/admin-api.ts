@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/pagination";
 import { listTag, listTags } from "@/lib/api/tags";
 import type { ApiSuccess, Paginated, UUID } from "@/types/api";
+import type { AdminUserAction } from "@/types/enums";
 import type {
   AdminAnalytics,
   AdminDashboard,
@@ -42,6 +43,12 @@ export interface UpdateConfigRequest {
   key: string;
   value: string;
   description?: string;
+}
+
+export interface ManageUserRequest {
+  userId: UUID;
+  action: AdminUserAction;
+  reason?: string;
 }
 
 const listQuery = (path: string, params: AdminListParams) => ({
@@ -192,6 +199,11 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiSuccess<TradeSchedule>) => response.data,
       invalidatesTags: ["Setting"],
     }),
+    manageUser: builder.mutation<User, ManageUserRequest>({
+      query: (body) => ({ url: bff("/admin/users/action"), method: "POST", body }),
+      transformResponse: (response: ApiSuccess<User>) => response.data,
+      invalidatesTags: ["User"],
+    }),
     toggleContentCreator: builder.mutation<unknown, { userId: UUID; isContentCreator: boolean }>({
       query: ({ userId, isContentCreator }) => ({
         url: bff(`/admin/users/${userId}/content-creator`),
@@ -226,6 +238,7 @@ export const {
   useAdminAuditLogsQuery,
   useAdminSettingsQuery,
   useUpdateConfigMutation,
+  useManageUserMutation,
   useAdminTradeScheduleQuery,
   useUpdateTradeScheduleMutation,
   useToggleContentCreatorMutation,

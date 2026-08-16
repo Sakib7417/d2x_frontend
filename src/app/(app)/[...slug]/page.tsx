@@ -29,6 +29,7 @@ import {
 } from "@/features/portal/api/portal-api";
 import { useToggleAutoTradeMutation, useUserDashboardQuery } from "@/features/users/api/users-api";
 import { useWalletSummaryQuery } from "@/features/wallet/api/wallet-api";
+import { TransferToPrincipal } from "@/components/common/transfer-to-principal";
 import { useCreateWithdrawalMutation, useWithdrawalsQuery } from "@/features/withdrawals/api/withdrawals-api";
 import {
   useCreatePoolBonusRequestMutation,
@@ -92,8 +93,8 @@ export default function UserPortalPage({ params }: { params: Promise<{ slug: str
 
 function WalletPage() {
   const query = useWalletSummaryQuery();
-  const entries = Object.entries(query.data?.wallets ?? {});
-  return <><PageHeader title="Wallet" description="Balances and lifetime movement for each wallet." /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><StatCard label="Total balance" value={<Money value={query.data?.totalBalance} showCurrency />} icon={Wallet} loading={query.isLoading} />{entries.map(([type, wallet], i) => <StatCard key={type} label={title(type)} value={<Money value={wallet?.balance} showCurrency />} hint={<>Credits <Money value={wallet?.totalCredit} size="xs" /> · Debits <Money value={wallet?.totalDebit} size="xs" /></>} index={i + 1} />)}</div><ErrorText error={query.error} /></>;
+  const entries = Object.entries(query.data?.wallets ?? {}).filter(([type]) => type !== "ADMIN_COMMISSION");
+  return <><PageHeader title="Wallet" description="Balances and lifetime movement for each wallet." /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><StatCard label="Total balance" value={<Money value={query.data?.totalBalance} showCurrency />} icon={Wallet} loading={query.isLoading} />{entries.map(([type, wallet], i) => <StatCard key={type} label={title(type)} value={<Money value={wallet?.balance} showCurrency />} hint={<>Credits <Money value={wallet?.totalCredit} size="xs" /> · Debits <Money value={wallet?.totalDebit} size="xs" /></>} index={i + 1} />)}<TransferToPrincipal /></div><ErrorText error={query.error} /></>;
 }
 
 const depositColumns: DataTableColumn<Deposit>[] = [
@@ -116,16 +117,16 @@ function DepositPage() {
           <CardDescription>Your recent deposit transactions.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable 
-            columns={depositColumns} 
-            page={query.data} 
-            loading={query.isLoading} 
-            fetching={query.isFetching} 
-            error={normalizeError(query.error)} 
-            onRetry={query.refetch} 
-            getRowId={(r) => r.id} 
-            renderMobileCard={(r) => <DepositMobile row={r} />} 
-            onPageChange={setPage} 
+          <DataTable
+            columns={depositColumns}
+            page={query.data}
+            loading={query.isLoading}
+            fetching={query.isFetching}
+            error={normalizeError(query.error)}
+            onRetry={query.refetch}
+            getRowId={(r) => r.id}
+            renderMobileCard={(r) => <DepositMobile row={r} />}
+            onPageChange={setPage}
           />
         </CardContent>
       </Card>
@@ -313,8 +314,8 @@ function ReferralPage() {
   );
 }
 
-function ReferralTreePage() { 
-  const q = useReferralTreeQuery(5); 
+function ReferralTreePage() {
+  const q = useReferralTreeQuery(5);
   return (
     <>
       <PageHeader title="Referral Tree" description="Your network structure through five levels." />
@@ -503,17 +504,17 @@ function SupportTicketsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Support Center" 
-        description="Get help with your account, report issues, or share feedback with our team." 
+      <PageHeader
+        title="Support Center"
+        description="Get help with your account, report issues, or share feedback with our team."
         actions={
           <Button onClick={() => setShowForm(!showForm)} className="gap-2">
             <MessageSquare className="h-4 w-4" />
             {showForm ? "Cancel" : "New Ticket"}
           </Button>
-        } 
+        }
       />
-      
+
       {showForm && (
         <Card className="border-primary/20 shadow-lg pt-0">
           <CardHeader className="bg-linear-to-r from-primary/5 to-primary/10 border-b pt-2">
@@ -529,16 +530,16 @@ function SupportTicketsPage() {
             <form onSubmit={handleCreate} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="ticket-subject" className="text-sm font-medium">Subject</Label>
-                <Input 
-                  id="ticket-subject" 
-                  value={subject} 
-                  onChange={(e) => setSubject(e.target.value)} 
-                  placeholder="Brief summary of your question or issue" 
+                <Input
+                  id="ticket-subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Brief summary of your question or issue"
                   className="h-11"
-                  required 
+                  required
                 />
               </div>
-              
+
               <div className="space-y-3">
                 <Label className="text-sm font-medium">What type of help do you need?</Label>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -550,15 +551,13 @@ function SupportTicketsPage() {
                         key={option.value}
                         type="button"
                         onClick={() => setHelpType(option.value as "GENERAL_INQUIRY" | "TECHNICAL_SUPPORT" | "ACCOUNT_HELP" | "FEEDBACK")}
-                        className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all ${
-                          isSelected 
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
+                        className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all ${isSelected
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                          }`}
                       >
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                          isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
-                        }`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
+                          }`}>
                           <Icon className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
@@ -570,7 +569,7 @@ function SupportTicketsPage() {
                   })}
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ticket-message" className="text-sm font-medium">Message</Label>
                 <textarea
@@ -635,7 +634,7 @@ function SupportTicketsPage() {
           </CardContent>
         </Card>
       )}
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -645,17 +644,17 @@ function SupportTicketsPage() {
           <CardDescription>Track and manage all your support requests in one place.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable 
-            columns={ticketColumns} 
-            page={data} 
-            loading={isLoading} 
-            getRowId={(r) => r.id} 
-            onPageChange={setPage} 
+          <DataTable
+            columns={ticketColumns}
+            page={data}
+            loading={isLoading}
+            getRowId={(r) => r.id}
+            onPageChange={setPage}
             emptyState={{
               title: "No support tickets yet",
               description: "Create your first ticket to get help from our support team.",
               icon: MessageSquare
-            }} 
+            }}
           />
         </CardContent>
       </Card>
@@ -713,7 +712,7 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
           Back to tickets
         </Button>
       </div>
-      
+
       <Card className="border-primary/20 shadow-lg py-0">
         <CardHeader className="bg-linear-to-r from-primary/5 to-primary/10 border-b pt-4">
           <div className="flex items-start justify-between gap-4">
@@ -751,12 +750,12 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-6">
           {(ticket.messages ?? []).map((msg: TicketMessage, index: number) => {
             const isFirst = index === 0;
             const showDateDivider = isFirst || (index > 0 && ticket.messages && new Date(msg.createdAt).toDateString() !== new Date(ticket.messages[index - 1].createdAt).toDateString());
-            
+
             return (
               <div key={msg.id}>
                 {showDateDivider && (
@@ -770,42 +769,38 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
                     </div>
                   </div>
                 )}
-                
+
                 <div className={`flex gap-4 ${msg.isAdmin ? "flex-row" : "flex-row-reverse"}`}>
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                    msg.isAdmin 
-                      ? "bg-linear-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20" 
-                      : "bg-linear-to-br from-muted to-muted/80 text-muted-foreground shadow-md"
-                  }`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${msg.isAdmin
+                    ? "bg-linear-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-linear-to-br from-muted to-muted/80 text-muted-foreground shadow-md"
+                    }`}>
                     {msg.isAdmin ? (
                       <ShieldCheck className="h-6 w-6" />
                     ) : (
                       <Users className="h-6 w-6" />
                     )}
                   </div>
-                  
+
                   <div className={`flex max-w-[75%] flex-col gap-1.5 ${msg.isAdmin ? "items-start" : "items-end"}`}>
-                    <div className={`flex items-center gap-2 px-1 ${
-                      msg.isAdmin ? "text-primary font-semibold text-sm" : "text-muted-foreground font-medium text-sm"
-                    }`}>
+                    <div className={`flex items-center gap-2 px-1 ${msg.isAdmin ? "text-primary font-semibold text-sm" : "text-muted-foreground font-medium text-sm"
+                      }`}>
                       <span>{msg.isAdmin ? "Support Team" : "You"}</span>
                       <span className="text-muted-foreground/70 text-xs">•</span>
                       <span className="text-muted-foreground/70 text-xs">
                         {new Date(msg.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    
-                    <div className={`relative group ${
-                      msg.isAdmin 
-                        ? "bg-linear-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl rounded-tl-sm" 
-                        : "bg-linear-to-br from-muted/50 to-muted/30 border border-border rounded-2xl rounded-tr-sm"
-                    }`}>
-                      <div className={`absolute -z-10 inset-0 rounded-2xl blur-xl transition-opacity duration-300 ${
-                        msg.isAdmin 
-                          ? "bg-primary/10 opacity-0 group-hover:opacity-100" 
-                          : "bg-muted/50 opacity-0 group-hover:opacity-100"
-                      }`} />
-                      
+
+                    <div className={`relative group ${msg.isAdmin
+                      ? "bg-linear-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl rounded-tl-sm"
+                      : "bg-linear-to-br from-muted/50 to-muted/30 border border-border rounded-2xl rounded-tr-sm"
+                      }`}>
+                      <div className={`absolute -z-10 inset-0 rounded-2xl blur-xl transition-opacity duration-300 ${msg.isAdmin
+                        ? "bg-primary/10 opacity-0 group-hover:opacity-100"
+                        : "bg-muted/50 opacity-0 group-hover:opacity-100"
+                        }`} />
+
                       <div className="relative p-5">
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
                         {msg.attachments && msg.attachments.length > 0 && (
@@ -843,12 +838,12 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
             <form onSubmit={handleReply} className="space-y-4">
               <div className="space-y-2">
                 <div className="relative">
-                  <textarea 
+                  <textarea
                     className="flex min-h-32 w-full rounded-xl border border-input bg-transparent px-4 py-4 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                    value={reply} 
-                    onChange={(e) => setReply(e.target.value)} 
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
                     placeholder="Type your message here..."
-                    required 
+                    required
                   />
                   <div className="absolute bottom-3 right-3 text-muted-foreground text-xs">
                     {reply.length} characters
@@ -908,7 +903,7 @@ function TicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack: () =
           </CardContent>
         </Card>
       )}
-      
+
       {ticket.status === "CLOSED" && (
         <Card className="border-muted bg-muted/30">
           <CardContent className="flex items-center justify-center py-8">
@@ -977,17 +972,17 @@ function MyPostsPage() {
     </form></CardContent></Card>}
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {isLoading ? <p className="text-muted-foreground">Loading…</p>
-      : posts.length === 0 ? <p className="text-muted-foreground">No posts yet.</p>
-      : posts.map((post) => (
-        <Card key={post.id}>
-          <div className="relative aspect-video overflow-hidden rounded-t-xl">
-            {post.imageUrl && <Image src={postImageUrl(post.imageUrl)} alt={post.title} fill className="object-cover" unoptimized />}
-            <div className="absolute top-2 right-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${post.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>{post.isActive ? "Active" : "Inactive"}</span></div>
-          </div>
-          <CardContent className="p-4"><h3 className="font-semibold">{post.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{post.description}</p>
-          <div className="mt-3 flex gap-2"><Button size="sm" variant="outline" onClick={() => handleEdit(post)}>Edit</Button><Button size="sm" variant="destructive" onClick={() => handleDelete(post.id)} disabled={deleteMut.isLoading}>Delete</Button></div></CardContent>
-        </Card>
-      ))}
+        : posts.length === 0 ? <p className="text-muted-foreground">No posts yet.</p>
+          : posts.map((post) => (
+            <Card key={post.id}>
+              <div className="relative aspect-video overflow-hidden rounded-t-xl">
+                {post.imageUrl && <Image src={postImageUrl(post.imageUrl)} alt={post.title} fill className="object-cover" unoptimized />}
+                <div className="absolute top-2 right-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${post.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>{post.isActive ? "Active" : "Inactive"}</span></div>
+              </div>
+              <CardContent className="p-4"><h3 className="font-semibold">{post.title}</h3><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{post.description}</p>
+                <div className="mt-3 flex gap-2"><Button size="sm" variant="outline" onClick={() => handleEdit(post)}>Edit</Button><Button size="sm" variant="destructive" onClick={() => handleDelete(post.id)} disabled={deleteMut.isLoading}>Delete</Button></div></CardContent>
+            </Card>
+          ))}
     </div>
   </>;
 }
@@ -1031,17 +1026,17 @@ function MyNewsPage() {
       <div className="space-y-2"><Label htmlFor="mn-title">Title</Label><Input id="mn-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Platform Update" required /></div>
       <div className="space-y-2"><Label htmlFor="mn-message">Message</Label><Input id="mn-message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="e.g., 500 users joined today!" required /></div>
       <div className="flex gap-2"><Button type="submit" disabled={createMut.isLoading || updateMut.isLoading}>{createMut.isLoading || updateMut.isLoading ? "Saving…" : editId ? "Update" : "Create"}</Button>
-      {editId && <Button type="button" variant="ghost" onClick={() => { setEditId(null); setTitle(""); setMessage(""); }}>Cancel</Button>}</div>
+        {editId && <Button type="button" variant="ghost" onClick={() => { setEditId(null); setTitle(""); setMessage(""); }}>Cancel</Button>}</div>
     </form></CardContent></Card>
     <div className="space-y-3">
       {isLoading ? <p className="text-muted-foreground">Loading…</p>
-      : news.length === 0 ? <p className="text-muted-foreground">No news items yet.</p>
-      : news.map((item) => (
-        <Card key={item.id}><CardContent className="flex items-center justify-between p-4">
-          <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="font-semibold">{item.title}</h3><span className={`rounded-full px-2 py-0.5 text-xs ${item.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>{item.isActive ? "Active" : "Inactive"}</span></div><p className="mt-1 text-sm text-muted-foreground">{item.message}</p></div>
-          <div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" onClick={() => handleEdit(item)}>Edit</Button><Button size="sm" variant="ghost" onClick={() => toggleActive(item)}>{item.isActive ? "Deactivate" : "Activate"}</Button><Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)} disabled={deleteMut.isLoading}>Delete</Button></div>
-        </CardContent></Card>
-      ))}
+        : news.length === 0 ? <p className="text-muted-foreground">No news items yet.</p>
+          : news.map((item) => (
+            <Card key={item.id}><CardContent className="flex items-center justify-between p-4">
+              <div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h3 className="font-semibold">{item.title}</h3><span className={`rounded-full px-2 py-0.5 text-xs ${item.isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"}`}>{item.isActive ? "Active" : "Inactive"}</span></div><p className="mt-1 text-sm text-muted-foreground">{item.message}</p></div>
+              <div className="flex shrink-0 gap-2"><Button size="sm" variant="outline" onClick={() => handleEdit(item)}>Edit</Button><Button size="sm" variant="ghost" onClick={() => toggleActive(item)}>{item.isActive ? "Deactivate" : "Activate"}</Button><Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)} disabled={deleteMut.isLoading}>Delete</Button></div>
+            </CardContent></Card>
+          ))}
     </div>
   </>;
 }

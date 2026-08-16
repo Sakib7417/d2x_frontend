@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
 import { selectBalancesHidden } from "@/store/slices/ui-slice";
 import {
-  CURRENCY,
   formatCompact,
   signOf,
   splitForDisplay,
@@ -176,6 +175,9 @@ export function Money({
         className,
       )}
     >
+      {showCurrency && (
+        <span className="text-[0.75em] font-medium opacity-55">$</span>
+      )}
       {withIcon && sign !== "zero" && (
         <TrendIcon
           className="size-3 shrink-0 self-center"
@@ -197,9 +199,6 @@ export function Money({
           </span>
         )}
       </span>
-      {showCurrency && (
-        <span className="text-[0.75em] font-medium opacity-55">{CURRENCY}</span>
-      )}
     </span>
   );
 }

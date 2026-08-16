@@ -8,6 +8,14 @@ import { wagmiAdapter, projectId, networks } from '@/config/wagmi'
 
 const queryClient = new QueryClient()
 
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  )
+}
+
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Create modal only on client side

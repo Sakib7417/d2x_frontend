@@ -7,13 +7,16 @@ import {
   Activity,
   Bell,
   Blocks,
+  Ban,
   ChartLine,
+  CheckCircle,
   ClipboardList,
   Clock,
   Medal,
   Network,
   Search,
   Settings,
+  Trash2,
   Trophy,
   Users,
   WalletCards,
@@ -33,13 +36,24 @@ import { Money } from "@/components/common/money";
 import { PageHeader } from "@/components/common/page-header";
 import { StatCard } from "@/components/common/stat-card";
 import { StatusBadge } from "@/components/common/status-badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
-import { PoolBonusRequestStatus } from "@/types/enums";
+import { AdminUserAction, PoolBonusRequestStatus } from "@/types/enums";
 import {
   useAdminAnalyticsQuery,
   useAdminAuditLogsQuery,
@@ -55,6 +69,7 @@ import {
   useAdminUserDetailQuery,
   useAdminUsersQuery,
   useAdminWalletsQuery,
+  useManageUserMutation,
   useAdminWithdrawalsQuery,
   useUpdateConfigMutation,
   useUpdateTradeScheduleMutation,
@@ -1236,8 +1251,23 @@ function AdminTicketDetailPage({ ticketId, onBack }: { ticketId: string; onBack:
  * post images use.
  */
 function AdminUserDetailPage({ userId }: { userId: UUID }) {
+  const router = useRouter();
   const { data: user, error, isLoading, refetch } = useAdminUserDetailQuery(userId);
+  const [manageUser, { isLoading: isManaging }] = useManageUserMutation();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const normalizedError = normalizeError(error);
+
+  const handleAction = async (action: AdminUserAction) => {
+    try {
+      await manageUser({ userId, action }).unwrap();
+      toast.success(action === AdminUserAction.DELETE ? "User deleted." : `User ${action.toLowerCase()}ed.`);
+      if (action === AdminUserAction.DELETE) {
+        router.push(ROUTES.admin.users);
+      }
+    } catch (error) {
+      toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
+    }
+  };
 
   return (
     <>
@@ -1319,6 +1349,69 @@ function AdminUserDetailPage({ userId }: { userId: UUID }) {
                   description="This user signed up before KYC was mandatory."
                 />
               )}
+            </CardContent>
+          </Card>
+
+          {/* Admin actions */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Admin actions</CardTitle>
+              <CardDescription>Moderate or remove this account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                {user.status === "ACTIVE" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isManaging}
+                    onClick={() => handleAction(AdminUserAction.SUSPEND)}
+                  >
+                    <Ban className="size-4" />
+                    Suspend / Block
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isManaging}
+                    onClick={() => handleAction(AdminUserAction.ACTIVATE)}
+                  >
+                    <CheckCircle className="size-4" />
+                    Activate
+                  </Button>
+                )}
+
+                <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isManaging}
+                    >
+                      <Trash2 className="size-4" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently mark the account as deleted. The user will no longer be able to log in or trade. This action cannot be undone from the admin panel.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleAction(AdminUserAction.DELETE)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardContent>
           </Card>
         </div>

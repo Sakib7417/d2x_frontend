@@ -9,7 +9,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import type { PreloadedState } from "@/store";
 import ContextProvider from '@/context'
-import { Web3Provider } from "./web3-provider"
+import { QueryProvider } from "./web3-provider"
+import { Web3Lazy } from "./web3-lazy"
 
 /**
  * Root provider composition.
@@ -35,17 +36,19 @@ export async function Providers({
   const cookies = headersObj.get('cookie')
   return (
     <ThemeProvider>
-      <Web3Provider>
+      <QueryProvider>
         <StoreProvider preloadedState={preloadedState}>
           <TooltipProvider delayDuration={250} skipDelayDuration={400}>
             <SessionWatcher />
               <ContextProvider cookies={cookies}>
+            <Web3Lazy>
             {children}
+            </Web3Lazy>
             </ContextProvider>
             <Toaster />
           </TooltipProvider>
         </StoreProvider>
-      </Web3Provider>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  ChartCandlestick,
-  Check,
-  Copy,
-  Network,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Check, Copy, Network, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -25,23 +16,13 @@ import { Input } from "@/components/ui/input";
 
 import { ErrorState } from "@/components/common/error-state";
 import { Money } from "@/components/common/money";
-import { PageHeader } from "@/components/common/page-header";
-import { SponsorTradeBonus } from "@/components/common/sponsor-trade-bonus";
-import { StatCard } from "@/components/common/stat-card";
 import { TransferToPrincipal } from "@/components/common/transfer-to-principal";
 import { DashboardSlider, NewsTicker } from "@/components/common/dashboard-slider";
+import LiveTradingChart from "@/components/home/live-trading-chart";
 
-import {
-  useDepositStatisticsQuery,
-  useDepositWalletAddressQuery,
-} from "@/features/deposits/api/deposits-api";
-import {
-  useReferralStatisticsQuery,
-  useTradeStatisticsQuery,
-} from "@/features/portal/api/portal-api";
+import { useDepositWalletAddressQuery } from "@/features/deposits/api/deposits-api";
 import { useUserDashboardQuery } from "@/features/users/api/users-api";
 import { useWalletSummaryQuery } from "@/features/wallet/api/wallet-api";
-import { useWithdrawalStatisticsQuery } from "@/features/withdrawals/api/withdrawals-api";
 
 import { normalizeError } from "@/lib/api/errors";
 import { ROUTES } from "@/config/routes";
@@ -55,30 +36,13 @@ export default function DashboardPage() {
 
   const dashboard = useUserDashboardQuery();
   const wallet = useWalletSummaryQuery();
-  const deposits = useDepositStatisticsQuery();
-  const withdrawals = useWithdrawalStatisticsQuery();
-  const trades = useTradeStatisticsQuery();
-  const referrals = useReferralStatisticsQuery();
   const depositWallet = useDepositWalletAddressQuery();
 
-  const loading =
-    dashboard.isLoading ||
-    wallet.isLoading ||
-    deposits.isLoading ||
-    withdrawals.isLoading ||
-    trades.isLoading ||
-    referrals.isLoading;
+  const loading = dashboard.isLoading || wallet.isLoading || depositWallet.isLoading;
 
   const error = normalizeError(
-    dashboard.error ??
-      wallet.error ??
-      deposits.error ??
-      withdrawals.error ??
-      trades.error ??
-      referrals.error
+    dashboard.error ?? wallet.error ?? depositWallet.error
   );
-
-  const firstName = user?.name?.split(" ")[0];
 
   const referralLink =
     typeof window !== "undefined"
@@ -116,106 +80,42 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title={firstName ? `Welcome back, ${firstName}` : "Dashboard"}
-        description="A live overview of your balances, activity, trading, and network."
-      />
-
-      <DashboardSlider />
-      <NewsTicker />
-
       {error && <ErrorState error={error} />}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <SponsorTradeBonus
-          expiry={dashboard.data?.profile.sponsorTradeBonusExpiry}
-          rate={dashboard.data?.profile.sponsorTradeBonusRate}
-        />
+      {/* 1. User name + total balance */}
+      <Card className="mb-6">
+        <CardContent className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {user?.name ? `Hello, ${user.name}` : "Welcome"}
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Here is your account overview.
+            </p>
+          </div>
+          <div className="text-left sm:text-right">
+            <p className="text-muted-foreground text-sm">Total balance</p>
+            <div className="text-3xl font-bold">
+              {wallet.isLoading ? (
+                <span className="text-muted-foreground">Loading…</span>
+              ) : (
+                <Money value={wallet.data?.totalBalance} showCurrency />
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <StatCard
-          label="Total balance"
-          value={<Money value={wallet.data?.totalBalance} showCurrency compact />}
-          icon={Wallet}
-          loading={loading}
-        />
+      {/* 2. News section */}
+      <section className="mb-6">
+        <NewsTicker />
+      </section>
 
-        <StatCard
-          label="Approved deposits"
-          value={
-            <Money
-              value={String(deposits.data?.totalAmount ?? 0)}
-              showCurrency
-              compact
-            />
-          }
-          hint={`${deposits.data?.approvedDeposits ?? 0} approved`}
-          icon={ArrowDownToLine}
-          accent="profit"
-          loading={loading}
-        />
+      {/* 2b. Live trading chart from home page */}
+      <LiveTradingChart minimal />
 
-        <StatCard
-          label="Withdrawals"
-          value={
-            <Money
-              value={String(withdrawals.data?.totalAmount ?? 0)}
-              showCurrency
-              compact
-            />
-          }
-          hint={`${withdrawals.data?.pendingWithdrawals ?? 0} pending`}
-          icon={ArrowUpFromLine}
-          accent="pending"
-          loading={loading}
-        />
-
-        <StatCard
-          label="Trading profit"
-          value={
-            <Money
-              value={String(trades.data?.totalUserProfit ?? 0)}
-              showCurrency
-              compact
-              variant="positive"
-            />
-          }
-          hint={`${trades.data?.totalTrades ?? 0} trades`}
-          icon={ChartCandlestick}
-          accent="profit"
-          loading={loading}
-        />
-
-        <StatCard
-          label="Direct referrals"
-          value={
-            referrals.data?.directReferrals ??
-            dashboard.data?.directReferrals ??
-            0
-          }
-          hint={`${dashboard.data?.teamSize ?? 0} team members`}
-          icon={Users}
-          accent="info"
-          loading={loading}
-        />
-
-        <StatCard
-          label="Referral earnings"
-          value={
-            <Money
-              value={String(referrals.data?.totalBonusAmount ?? 0)}
-              showCurrency
-              compact
-              variant="positive"
-            />
-          }
-          hint={`${referrals.data?.totalBonuses ?? 0} bonuses`}
-          icon={Network}
-          accent="brand"
-          loading={loading}
-        />
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      {/* 3. Referral + deposit address */}
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -300,7 +200,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <TransferToPrincipal />
+      {/* 4. Transfer to compound */}
+      <section className="mb-6">
+        <TransferToPrincipal />
+      </section>
+
+      {/* 5. Slider at the very bottom */}
+      <DashboardSlider />
     </>
   );
 }

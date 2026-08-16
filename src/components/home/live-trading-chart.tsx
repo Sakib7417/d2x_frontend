@@ -80,7 +80,7 @@ function ChartTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export default function LiveTradingChart() {
+export default function LiveTradingChart({ minimal = false }: { minimal?: boolean }) {
   const reduce = useReducedMotion();
   const [data, setData] = useState<Candle[]>(() => seed(40));
   const [pulse, setPulse] = useState(0);
@@ -135,6 +135,154 @@ export default function LiveTradingChart() {
     ],
     [],
   );
+
+  if (minimal) {
+    return (
+      <div className='overflow-hidden rounded-2xl border border-white/5 bg-card/70 backdrop-blur-md p-5 md:p-6'>
+        {/* header row */}
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex items-center gap-3'>
+            <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--logo-gold-400)]/10 text-[var(--logo-gold-300)] ring-1 ring-[var(--logo-gold-400)]/25'>
+              <Activity className='size-5' />
+            </div>
+            <div>
+              <div className='flex items-center gap-2'>
+                <span className='font-semibold text-foreground'>D2X / USDT</span>
+                <span className='rounded bg-[var(--logo-gold-400)]/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--logo-gold-300)]'>
+                  AI Pool
+                </span>
+              </div>
+              <div className='flex items-center gap-2 text-sm'>
+                <span className='font-mono text-lg font-semibold text-foreground tabular'>
+                  ${last.toFixed(4)}
+                </span>
+                <span
+                  className={cn(
+                    'flex items-center gap-0.5 font-medium tabular',
+                    up ? 'text-profit' : 'text-loss',
+                  )}
+                >
+                  {up ? (
+                    <ArrowUpRight className='size-3.5' />
+                  ) : (
+                    <ArrowDownRight className='size-3.5' />
+                  )}
+                  {up ? '+' : ''}
+                  {change.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className='flex items-center gap-2 text-xs'>
+            <span className='flex items-center gap-1.5 rounded-full bg-profit/10 px-2.5 py-1 font-medium text-profit'>
+              <span className='relative flex h-1.5 w-1.5'>
+                <span
+                  className='absolute inline-flex h-full w-full rounded-full bg-profit opacity-75'
+                  style={{
+                    animation: reduce
+                      ? undefined
+                      : 'glow-pulse 1.4s ease-in-out infinite',
+                  }}
+                />
+                <span className='relative inline-flex h-1.5 w-1.5 rounded-full bg-profit' />
+              </span>
+              LIVE
+            </span>
+            <span className='text-muted-foreground'>2s tick</span>
+          </div>
+        </div>
+
+        {/* chart */}
+        <div className='relative h-64 w-full md:h-80'>
+          <ResponsiveContainer width='100%' height='100%'>
+            <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id='d2xArea' x1='0' y1='0' x2='0' y2='1'>
+                  <stop
+                    offset='0%'
+                    stopColor='var(--logo-gold-400)'
+                    stopOpacity={0.35}
+                  />
+                  <stop
+                    offset='100%'
+                    stopColor='var(--logo-gold-400)'
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+                <linearGradient id='d2xLine' x1='0' y1='0' x2='1' y2='0'>
+                  <stop offset='0%' stopColor='var(--logo-navy-300)' />
+                  <stop offset='55%' stopColor='var(--logo-gold-300)' />
+                  <stop offset='100%' stopColor='var(--logo-gold-100)' />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey='t'
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={48}
+                interval='preserveStartEnd'
+              />
+              <YAxis
+                domain={['dataMin - 0.01', 'dataMax + 0.01']}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                width={56}
+                tickFormatter={(v: number) => '$' + v.toFixed(3)}
+              />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: 'var(--logo-gold-400)', strokeOpacity: 0.3 }}
+              />
+              <Area
+                type='monotone'
+                dataKey='v'
+                stroke='url(#d2xLine)'
+                strokeWidth={2}
+                fill='url(#d2xArea)'
+                isAnimationActive={!reduce}
+                animationDuration={600}
+                dot={false}
+                activeDot={{
+                  r: 4,
+                  fill: 'var(--logo-gold-300)',
+                  stroke: 'var(--logo-navy-900)',
+                  strokeWidth: 2,
+                }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+
+          <motion.div
+            key={pulse}
+            initial={reduce ? false : { opacity: 0.6 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className='pointer-events-none absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--logo-gold-300)]'
+          />
+        </div>
+
+        {/* mini stats strip */}
+        <div className='mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4'>
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className='rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2'
+            >
+              <div className='flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground'>
+                <s.icon className='size-3 text-[var(--logo-gold-300)]' />
+                {s.label}
+              </div>
+              <div className='mt-0.5 font-semibold text-foreground tabular'>
+                {s.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="relative overflow-hidden border-y border-white/5 bg-[var(--logo-navy-900)]/40 py-24">

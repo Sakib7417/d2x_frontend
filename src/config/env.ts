@@ -27,7 +27,8 @@ const schema = z.object({
     .string()
     .url()
     .transform((value) => value.replace(/\/+$/, ""))
-    .default("https://api.dollar2x.trade/api/v1"),
+    // .default("https://api.dollar2x.trade/api/v1"),
+    .default("http://localhost:3000"),
 
   /**
    * Public origin of THIS app. Used for absolute redirect URLs and for the
@@ -38,7 +39,8 @@ const schema = z.object({
     .string()
     .url()
     .transform((value) => value.replace(/\/+$/, ""))
-    .default("https://api.dollar2x.trade"),
+    // .default("https://api.dollar2x.trade"),
+    .default("http://localhost:3000"),
 
   /**
    * Upstream request timeout in ms. The backend performs on-chain RPC calls on

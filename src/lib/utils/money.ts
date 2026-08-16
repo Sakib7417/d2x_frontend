@@ -262,7 +262,7 @@ export function formatCompact(
     maximumFractionDigits: 2,
   }).format(asNumber);
 
-  return withCurrency ? `${text} ${CURRENCY}` : text;
+  return withCurrency ? `$${text}` : text;
 }
 
 /**

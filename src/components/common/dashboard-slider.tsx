@@ -3,6 +3,13 @@
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Newspaper, ImageOff } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { usePublicPostsQuery, usePublicNewsQuery, postImageUrl } from "@/features/content/api/content-api";
 
 const SLIDE_INTERVAL = 5000; // 5 seconds
@@ -13,7 +20,9 @@ export function DashboardSlider() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [didDrag, setDidDrag] = useState(false);
   const [startX, setStartX] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Auto-scroll
   useEffect(() => {
@@ -48,12 +57,16 @@ export function DashboardSlider() {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (posts.length <= 2) return; // Disable drag navigation for 1-2 items
     setIsDragging(true);
+    setDidDrag(false);
     setStartX(e.pageX);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || posts.length <= 2) return;
     const diff = e.pageX - startX;
+    if (Math.abs(diff) > 5) {
+      setDidDrag(true);
+    }
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
         scroll("left");
@@ -62,6 +75,14 @@ export function DashboardSlider() {
       }
       setIsDragging(false);
     }
+  };
+
+  const handleSlideClick = (index: number) => {
+    if (didDrag) {
+      setDidDrag(false);
+      return;
+    }
+    setSelectedIndex(index);
   };
 
   const handleMouseUp = () => {
@@ -110,13 +131,14 @@ export function DashboardSlider() {
                 <div
                   key={0}
                   data-slide
-                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 cursor-pointer overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: "60%",
                     transform: "scale(1) translateZ(0)",
                     opacity: 1,
                     zIndex: 10,
                   }}
+                  onClick={() => handleSlideClick(0)}
                 >
                   {post.imageUrl ? (
                     <Image
@@ -146,13 +168,14 @@ export function DashboardSlider() {
                 <div
                   key={index}
                   data-slide
-                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 cursor-pointer overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: "40%",
                     transform: "scale(1) translateZ(0)",
                     opacity: 1,
                     zIndex: 10,
                   }}
+                  onClick={() => handleSlideClick(index)}
                 >
                   {post.imageUrl ? (
                     <Image
@@ -193,7 +216,7 @@ export function DashboardSlider() {
                 <div
                   key={index}
                   data-slide
-                  className="relative flex h-full shrink-0 overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
+                  className="relative flex h-full shrink-0 cursor-pointer overflow-hidden rounded-xl border bg-card transition-all duration-500 ease-out"
                   style={{
                     width: isCenter ? "45%" : "25%",
                     transform: isCenter 
@@ -202,6 +225,7 @@ export function DashboardSlider() {
                     opacity: isCenter ? 1 : 0.6,
                     zIndex: isCenter ? 10 : 1,
                   }}
+                  onClick={() => handleSlideClick(index)}
                 >
                   {post.imageUrl ? (
                     <Image
@@ -270,6 +294,35 @@ export function DashboardSlider() {
           </div>
         )}
       </div>
+
+      <Dialog open={selectedIndex !== null} onOpenChange={(open) => { if (!open) setSelectedIndex(null); }}>
+        <DialogContent className="max-w-4xl sm:max-w-4xl">
+          {selectedIndex !== null && posts[selectedIndex] ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{posts[selectedIndex].title}</DialogTitle>
+                {posts[selectedIndex].description && (
+                  <DialogDescription>{posts[selectedIndex].description}</DialogDescription>
+                )}
+              </DialogHeader>
+              <div className="relative w-full overflow-hidden rounded-lg">
+                {posts[selectedIndex].imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={postImageUrl(posts[selectedIndex].imageUrl)}
+                    alt={posts[selectedIndex].title}
+                    className="h-auto max-h-[70vh] w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center bg-muted">
+                    <ImageOff className="size-12 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

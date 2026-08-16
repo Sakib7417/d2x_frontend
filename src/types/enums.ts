@@ -212,6 +212,7 @@ export const AdminUserAction = {
   SUSPEND: "SUSPEND",
   UNBAN: "UNBAN",
   ACTIVATE: "ACTIVATE",
+  DELETE: "DELETE",
 } as const;
 export type AdminUserAction =
   (typeof AdminUserAction)[keyof typeof AdminUserAction];
