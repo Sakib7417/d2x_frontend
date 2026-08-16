@@ -208,7 +208,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 4. Transfer to compound */}
-      <section className="mb-6">
+      <section className="mb-4 relative overflow-hidden">
         <TransferToPrincipal />
       </section>
 
