@@ -63,8 +63,8 @@ const phone = z
     z
       .string()
       .regex(
-        /^\+?[1-9]\d{1,14}$/,
-        "Enter a valid international phone number, e.g. +14155551234",
+        /^\d{10}$/,
+        "Enter a valid 10 digit phone number",
       ),
   );
 
@@ -124,7 +124,7 @@ export const signupSchema = z
     /** Client-only — never transmitted. */
     confirmPassword: z.string().min(1, "Please confirm your password"),
     /** Optional on the backend; blank strings are stripped before sending. */
-    phone: z.union([phone, z.literal("")]).optional(),
+    phone: z.union([phone, z.literal("")]),
     country: z
       .union([
         z

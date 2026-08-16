@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { ErrorState } from "@/components/common/error-state";
 import { PageHeader } from "@/components/common/page-header";
+import { ShareReferralButton } from "@/components/common/share-referral-button";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ import { ROUTES } from "@/config/routes";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters.").max(100),
-  phone: z.union([z.literal(""), z.string().trim().min(5).max(20)]),
+  phone: z.union([z.literal(""), z.string().trim().regex(/^\d{10}$/, "Phone number must be exactly 10 digits.")]),
   country: z.union([z.literal(""), z.string().trim().min(2).max(100)]),
   walletAddress: z.union([
     z.literal(""),
@@ -226,23 +227,26 @@ export default function ProfilePage() {
                 aria-label="Referral link"
                 className="font-mono text-sm"
               />
-              <Button
-                onClick={copyReferral}
-                variant={copiedRef ? "secondary" : "default"}
-                className="w-full"
-              >
-                {copiedRef ? (
-                  <>
-                    <Check className="mr-2 size-4" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="mr-2 size-4" />
-                    Copy Referral Link
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={copyReferral}
+                  variant={copiedRef ? "secondary" : "default"}
+                  className="flex-1"
+                >
+                  {copiedRef ? (
+                    <>
+                      <Check className="mr-2 size-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 size-4" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+                <ShareReferralButton referralLink={referralLink} />
+              </div>
             </CardContent>
           </Card>
 
@@ -262,8 +266,8 @@ export default function ProfilePage() {
                 <div className="space-y-3">
                   <Skeleton className="h-8 w-full" />
                   <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="aspect-[4/3] w-full" />
-                    <Skeleton className="aspect-[4/3] w-full" />
+                    <Skeleton className="aspect-4/3 w-full" />
+                    <Skeleton className="aspect-4/3 w-full" />
                   </div>
                 </div>
               ) : profile.govIdType || profile.govIdFrontUrl || profile.govIdBackUrl ? (
@@ -297,7 +301,7 @@ function ProfileKycImage({ label, url }: { label: string; url?: string | null })
     return (
       <div className="space-y-1.5">
         <p className="text-muted-foreground text-xs font-medium">{label}</p>
-        <div className="bg-muted flex aspect-[4/3] items-center justify-center rounded-lg border">
+        <div className="bg-muted flex aspect-4/3 items-center justify-center rounded-lg border">
           <span className="text-muted-foreground text-xs">Not provided</span>
         </div>
       </div>
@@ -311,7 +315,7 @@ function ProfileKycImage({ label, url }: { label: string; url?: string | null })
         <img
           src={url}
           alt={`${label} of your government ID`}
-          className="aspect-[4/3] w-full rounded-lg border object-cover transition-opacity hover:opacity-80"
+          className="aspect-4/3 w-full rounded-lg border object-cover transition-opacity hover:opacity-80"
         />
       </a>
     </div>

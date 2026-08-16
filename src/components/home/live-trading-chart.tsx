@@ -80,7 +80,7 @@ function ChartTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export default function LiveTradingChart() {
+export default function LiveTradingChart({ showHeading = true }: { showHeading?: boolean }) {
   const reduce = useReducedMotion();
   const [data, setData] = useState<Candle[]>(() => seed(40));
   const [pulse, setPulse] = useState(0);
@@ -136,55 +136,22 @@ export default function LiveTradingChart() {
     [],
   );
 
-  return (
-    <section className="relative overflow-hidden border-y border-white/5 bg-[var(--logo-navy-900)]/40 py-24">
-      {/* ambient glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          className="absolute left-1/2 top-1/2 h-[26rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
-          style={{
-            background:
-              "radial-gradient(circle, var(--logo-gold-400)/12, transparent 70%)",
-          }}
-        />
-      </div>
-
-      <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-10 text-center"
-        >
-          <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--logo-gold-300)]">
-            <span className="h-px w-8 bg-gradient-to-r from-transparent to-[var(--logo-gold-400)]" />
-            Live Trading Engine
-            <span className="h-px w-8 bg-gradient-to-l from-transparent to-[var(--logo-gold-400)]" />
-          </p>
-          <h2 className="text-3xl font-semibold text-foreground md:text-4xl">
-            Real-Time AI Market Execution
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-            Watch the Dollar2X engine scan, signal, and execute across global
-            markets — the same technology powering every member account.
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-          className="gold-ring overflow-hidden rounded-2xl"
-        >
-          <div className="grid gap-0 rounded-2xl border border-white/5 bg-card/70 backdrop-blur-md lg:grid-cols-[1.6fr_1fr]">
+  const chartContent = (
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 32 }}
+      whileInView={showHeading ? { opacity: 1, y: 0 } : undefined}
+      animate={showHeading ? undefined : { opacity: 1, y: 0 }}
+      viewport={showHeading ? { once: true, margin: "-80px" } : undefined}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: showHeading ? 0.1 : 0 }}
+      className="gold-ring overflow-hidden rounded-2xl"
+    >
+      <div className="grid gap-0 rounded-2xl border border-white/5 bg-card/70 backdrop-blur-md lg:grid-cols-[1.6fr_1fr]">
             {/* Chart panel */}
             <div className="relative p-5 md:p-6">
               {/* header row */}
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--logo-gold-400)]/10 text-[var(--logo-gold-300)] ring-1 ring-[var(--logo-gold-400)]/25">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-(--logo-gold-400)/10 text-(--logo-gold-300) ring-1 ring-(--logo-gold-400)/25">
                     <Activity className="size-5" />
                   </div>
                   <div>
@@ -192,7 +159,7 @@ export default function LiveTradingChart() {
                       <span className="font-semibold text-foreground">
                         D2X / USDT
                       </span>
-                      <span className="rounded bg-[var(--logo-gold-400)]/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--logo-gold-300)]">
+                      <span className="rounded bg-(--logo-gold-400)/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-(--logo-gold-300)">
                         AI Pool
                       </span>
                     </div>
@@ -316,7 +283,7 @@ export default function LiveTradingChart() {
                     className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2"
                   >
                     <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      <s.icon className="size-3 text-[var(--logo-gold-300)]" />
+                      <s.icon className="size-3 text-(--logo-gold-300)" />
                       {s.label}
                     </div>
                     <div className="mt-0.5 font-semibold text-foreground tabular">
@@ -331,7 +298,7 @@ export default function LiveTradingChart() {
             <div className="border-t border-white/5 p-5 md:p-6 lg:border-l lg:border-t-0">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Cpu className="size-4 text-[var(--logo-gold-300)]" />
+                  <Cpu className="size-4 text-(--logo-gold-300)" />
                   <span className="text-sm font-semibold text-foreground">
                     AI Trade Signals
                   </span>
@@ -399,10 +366,10 @@ export default function LiveTradingChart() {
               </div>
 
               {/* live PnL meter */}
-              <div className="mt-5 rounded-lg border border-[var(--logo-gold-400)]/20 bg-gradient-to-br from-[var(--logo-gold-400)]/10 to-transparent p-4">
+              <div className="mt-5 rounded-lg border border-(--logo-gold-400)/20 bg-linear-to-br from-(--logo-gold-400)/10 to-transparent p-4">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Session PnL (simulated)</span>
-                  <span className="text-[var(--logo-gold-300)]">AI Auto</span>
+                  <span className="text-(--logo-gold-300)">AI Auto</span>
                 </div>
                 <motion.div
                   key={Math.floor(pulse / 3)}
@@ -417,14 +384,57 @@ export default function LiveTradingChart() {
                     initial={{ width: "62%" }}
                     animate={{ width: `${62 + (pulse % 20)}%` }}
                     transition={{ duration: 0.6 }}
-                    className="h-full rounded-full bg-gradient-to-r from-[var(--logo-gold-500)] to-[var(--logo-gold-200)]"
+                    className="h-full rounded-full bg-linear-to-r from-(--logo-gold-500) to-(--logo-gold-200)"
                   />
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
-      </div>
-    </section>
+  );
+
+  return (
+    <>
+      {showHeading ? (
+        <section className="relative overflow-hidden border-y border-white/5 bg-[var(--logo-navy-900)]/40 py-24">
+          {/* ambient glow */}
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div
+              className="absolute left-1/2 top-1/2 h-[26rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
+              style={{
+                background:
+                  "radial-gradient(circle, var(--logo-gold-400)/12, transparent 70%)",
+              }}
+            />
+          </div>
+
+          <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-10 text-center"
+            >
+              <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-(--logo-gold-300)">
+                <span className="h-px w-8 bg-linear-to-r from-transparent to-[var(--logo-gold-400)]" />
+                Live Trading Engine
+                <span className="h-px w-8 bg-gradient-to-l from-transparent to-[var(--logo-gold-400)]" />
+              </p>
+              <h2 className="text-3xl font-semibold text-foreground md:text-4xl">
+                Real-Time AI Market Execution
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+                Watch the Dollar2X engine scan, signal, and execute across global
+                markets — the same technology powering every member account.
+              </p>
+            </motion.div>
+            {chartContent}
+          </div>
+        </section>
+      ) : (
+        chartContent
+      )}
+    </>
   );
 }

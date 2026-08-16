@@ -56,22 +56,6 @@ export function Topbar({
         <Menu className="size-5" />
       </Button>
 
-      <button
-        type="button"
-        onClick={() => dispatch(commandPaletteSet(true))}
-        className={cn(
-          "group border-border/70 bg-surface-1/60 text-muted-foreground flex h-9 items-center gap-2 rounded-lg border px-3",
-          "hover:border-border hover:bg-surface-2/60 transition-colors",
-          "w-9 justify-center sm:w-64 sm:justify-start",
-        )}
-        aria-label="Search"
-      >
-        <Search className="size-4 shrink-0" />
-        <span className="hidden text-sm sm:inline">Search…</span>
-        <kbd className="border-border/70 bg-surface-2 ml-auto hidden items-center gap-0.5 rounded border px-1.5 py-0.5 font-mono text-[0.625rem] font-medium sm:inline-flex">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
 
       <div className="flex-1" />
 
