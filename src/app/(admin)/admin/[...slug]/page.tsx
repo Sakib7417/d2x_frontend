@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -142,6 +142,7 @@ interface ListPageProps<T> {
   getRowId: (row: T, index: number) => string;
   statusOptions?: string[];
   onRowClick?: (row: T) => void;
+  clientSearch?: boolean;
 }
 
 function person(user: User | UserRef | null | undefined, fallback?: string) {
@@ -185,6 +186,7 @@ function AdminListPage<T>({
   getRowId,
   statusOptions = [],
   onRowClick,
+  clientSearch = false,
 }: ListPageProps<T>) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -192,6 +194,21 @@ function AdminListPage<T>({
   const [status, setStatus] = useState("");
   const result = useListQuery({ page, limit, search, status });
   const error = normalizeError(result.error);
+
+  const displayPage = useMemo(() => {
+    if (!clientSearch || !search || !result.data) return result.data;
+    const query = search.toLowerCase();
+    const items = result.data.items.filter((row) =>
+      JSON.stringify(row).toLowerCase().includes(query)
+    );
+    return {
+      ...result.data,
+      items,
+      page: 1,
+      total: items.length,
+      totalPages: Math.max(1, Math.ceil(items.length / result.data.limit)),
+    };
+  }, [clientSearch, search, result.data]);
 
   return (
     <>
@@ -238,7 +255,7 @@ function AdminListPage<T>({
       </div>
       <DataTable
         columns={columns}
-        page={result.data}
+        page={displayPage}
         loading={result.isLoading}
         fetching={result.isFetching}
         error={error}
@@ -1471,9 +1488,9 @@ export default function AdminModulePage() {
     case ROUTES.admin.users:
       return <AdminListPage title="Users" description="Review member accounts, access, rank, and activity." icon={Users} columns={usersColumns} useListQuery={useAdminUsersQuery} getRowId={(row) => row.id} statusOptions={["ACTIVE", "INACTIVE", "SUSPENDED"]} onRowClick={(row) => router.push(ROUTES.admin.user(row.id))} />;
     case ROUTES.admin.deposits:
-      return <AdminListPage title="Deposits" description="Monitor submitted deposits and verification state." icon={Activity} columns={depositsColumns} useListQuery={useAdminDepositsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "VERIFIED", "APPROVED", "REJECTED", "FAILED"]} />;
+      return <AdminListPage title="Deposits" description="Monitor submitted deposits and verification state." icon={Activity} columns={depositsColumns} useListQuery={useAdminDepositsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "VERIFIED", "APPROVED", "REJECTED", "FAILED"]} clientSearch />;
     case ROUTES.admin.withdrawals:
-      return <AdminListPage title="Withdrawals" description="Monitor withdrawal requests and payout state." icon={Activity} columns={withdrawalsColumns} useListQuery={useAdminWithdrawalsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "FAILED"]} />;
+      return <AdminListPage title="Withdrawals" description="Monitor withdrawal requests and payout state." icon={Activity} columns={withdrawalsColumns} useListQuery={useAdminWithdrawalsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "FAILED"]} clientSearch />;
     case ROUTES.admin.trading:
       return <AdminListPage title="Trading" description="Review platform trades, settlement, profit, and commission." icon={ChartLine} columns={tradesColumns} useListQuery={useAdminTradesQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "ACTIVE", "COMPLETED", "FAILED", "CANCELLED"]} />;
     case ROUTES.admin.wallets:

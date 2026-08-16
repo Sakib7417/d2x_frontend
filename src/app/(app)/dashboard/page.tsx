@@ -16,6 +16,10 @@ import { Input } from "@/components/ui/input";
 
 import { ErrorState } from "@/components/common/error-state";
 import { Money } from "@/components/common/money";
+import { PageHeader } from "@/components/common/page-header";
+import { ShareReferralButton } from "@/components/common/share-referral-button";
+import { SponsorTradeBonus } from "@/components/common/sponsor-trade-bonus";
+import { StatCard } from "@/components/common/stat-card";
 import { TransferToPrincipal } from "@/components/common/transfer-to-principal";
 import { DashboardSlider, NewsTicker } from "@/components/common/dashboard-slider";
 import LiveTradingChart from "@/components/home/live-trading-chart";
@@ -134,23 +138,26 @@ export default function DashboardPage() {
               aria-label="Referral link"
               className="font-mono text-sm"
             />
-            <Button
-              onClick={copyReferral}
-              variant={copiedRef ? "secondary" : "default"}
-              className="shrink-0"
-            >
-              {copiedRef ? (
-                <>
-                  <Check className="mr-2 size-4" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 size-4" />
-                  Copy
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={copyReferral}
+                variant={copiedRef ? "secondary" : "default"}
+                className="shrink-0"
+              >
+                {copiedRef ? (
+                  <>
+                    <Check className="mr-2 size-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 size-4" />
+                    Copy
+                  </>
+                )}
+              </Button>
+              <ShareReferralButton referralLink={referralLink} />
+            </div>
           </CardContent>
         </Card>
 
