@@ -60,8 +60,7 @@ export interface AuthUser {
   autoTradeStatus: boolean;
   status: UserStatus;
   govIdType?: GovIdType | null;
-  govIdFrontUrl?: string | null;
-  govIdBackUrl?: string | null;
+  govIdUrl?: string | null;
 }
 
 /** Full user, as returned by GET /users/profile (password stripped server-side). */
@@ -81,10 +80,8 @@ export interface User {
   isContentCreator?: boolean;
   /** Government ID type chosen at signup (AADHAAR/PAN/PASSPORT/DRIVING_LICENSE/VOTER_ID). */
   govIdType?: GovIdType | null;
-  /** Relative path to the front-side photo, e.g. /uploads/kyc/kyc-...jpg. */
-  govIdFrontUrl?: string | null;
-  /** Relative path to the back-side photo. */
-  govIdBackUrl?: string | null;
+  /** Public URL to the ID photo stored in Cloudflare R2. */
+  govIdUrl?: string | null;
   lastLogin: ISODateString | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;

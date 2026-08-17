@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, KeyRound } from "lucide-react";
@@ -33,32 +33,17 @@ import {
 } from "../schemas/auth-schemas";
 import { ROUTES } from "@/config/routes";
 
-/**
- * Complete a password reset.
- *
- * The token arrives as `?token=` from the emailed link. It is rendered as a
- * visible (editable) field only when absent from the URL, so a user who
- * received a code out-of-band — or whose email client mangled the link — can
- * still paste it rather than hitting a dead end.
- *
- * On success the backend revokes every refresh token for the account
- * (`revokeAllUserTokens`), so all other sessions are signed out. We tell the
- * user that explicitly: silent session termination looks like a bug on their
- * other devices.
- */
 export function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [resetPassword] = useResetPasswordMutation();
   const [done, setDone] = useState(false);
-
-  const tokenFromUrl = (searchParams.get("token") ?? "").trim();
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     mode: "onTouched",
     defaultValues: {
-      token: tokenFromUrl,
+      email: "",
+      otp: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -69,7 +54,8 @@ export function ResetPasswordForm() {
     mutate: async (values) => {
       const parsed = resetPasswordSchema.parse(values);
       return resetPassword({
-        token: parsed.token,
+        email: parsed.email,
+        otp: parsed.otp,
         newPassword: parsed.newPassword,
       }).unwrap();
     },
@@ -117,44 +103,56 @@ export function ResetPasswordForm() {
 
       <AuthFormHeader
         title="Choose a new password"
-        description="Pick something you haven't used before. This will sign you out everywhere else."
+        description="Enter the 6-digit code we sent to your email, then set a new password."
       />
 
       <AuthFormError error={formError} />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(submit)} className="space-y-5" noValidate>
-          {/*
-            When the token came from the URL we keep it in the form state but
-            out of the visual flow — showing an opaque 8-character code the
-            user cannot act on is noise. It stays registered so validation and
-            server-side field errors still target it.
-          */}
-          {tokenFromUrl ? (
-            <input type="hidden" {...form.register("token")} />
-          ) : (
-            <FormField
-              control={form.control}
-              name="token"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>Reset code</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      autoFocus
-                      spellCheck={false}
-                      autoCapitalize="characters"
-                      placeholder="Paste the code from your email"
-                      className="font-mono"
-                      aria-invalid={Boolean(fieldState.error)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoFocus
+                    placeholder="you@example.com"
+                    aria-invalid={Boolean(fieldState.error)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="otp"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel>Reset code</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    autoFocus
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="6-digit code from your email"
+                    className="font-mono"
+                    aria-invalid={Boolean(fieldState.error)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -166,7 +164,6 @@ export function ResetPasswordForm() {
                   <PasswordInput
                     {...field}
                     autoComplete="new-password"
-                    autoFocus={Boolean(tokenFromUrl)}
                     placeholder="At least 8 characters"
                     showStrength
                     invalid={Boolean(fieldState.error)}
@@ -203,7 +200,7 @@ export function ResetPasswordForm() {
       </Form>
 
       <p className="text-muted-foreground mt-6 text-center text-sm">
-        Link expired?{" "}
+        Didn&apos;t get a code?{" "}
         <Link
           href={ROUTES.forgotPassword}
           className="text-foreground font-medium underline-offset-4 hover:underline"

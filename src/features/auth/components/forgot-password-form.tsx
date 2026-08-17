@@ -31,12 +31,11 @@ import {
 import { ROUTES } from "@/config/routes";
 
 /**
- * Request a password reset.
+ * Request a password reset code (OTP) by email.
  *
  * The backend deliberately returns the same success response whether or not
  * the email exists (`forgotPassword` returns early on an unknown address), to
- * prevent account enumeration. The UI must preserve that: we show the identical
- * confirmation either way and never hint at whether an account was found.
+ * prevent account enumeration.
  */
 export function ForgotPasswordForm() {
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -57,7 +56,6 @@ export function ForgotPasswordForm() {
     onSuccess: (_result, values) => {
       setSentTo(forgotPasswordSchema.parse(values).email);
     },
-    // The confirmation screen is the feedback; a toast on top is redundant.
     toastOnError: true,
   });
 
@@ -78,8 +76,7 @@ export function ForgotPasswordForm() {
             <>
               If an account exists for{" "}
               <span className="text-foreground font-medium">{sentTo}</span>,
-              we&apos;ve sent a link to reset your password. The link expires in
-              one hour.
+              we&apos;ve sent a 6-digit reset code. It expires in 15 minutes.
             </>
           }
         />
@@ -98,6 +95,12 @@ export function ForgotPasswordForm() {
           </p>
 
           <Button variant="outline" asChild className="w-full">
+            <Link href={ROUTES.resetPassword}>
+              I have the code
+            </Link>
+          </Button>
+
+          <Button variant="ghost" asChild className="w-full">
             <Link href={ROUTES.login}>
               <ArrowLeft className="size-4" />
               Back to sign in
@@ -112,7 +115,7 @@ export function ForgotPasswordForm() {
     <>
       <AuthFormHeader
         title="Reset your password"
-        description="Enter the email associated with your account and we'll send you a reset link."
+        description="Enter the email associated with your account and we'll send you a reset code."
       />
 
       <AuthFormError error={formError} />
@@ -142,7 +145,7 @@ export function ForgotPasswordForm() {
           />
 
           <AuthSubmitButton loading={submitting} loadingLabel="Sending…">
-            Send reset link
+            Send reset code
           </AuthSubmitButton>
         </form>
       </Form>

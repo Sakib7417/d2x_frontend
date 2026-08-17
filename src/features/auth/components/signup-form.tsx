@@ -89,8 +89,7 @@ export function SignupForm() {
       phone: "",
       referralCode: referralFromUrl,
       govIdType: undefined,
-      govIdFront: undefined,
-      govIdBack: undefined,
+      govId: undefined,
       acceptTerms: false as unknown as true,
     },
   });
@@ -102,13 +101,11 @@ export function SignupForm() {
       // Builds multipart/form-data with text fields + the two ID photos.
       return signup(toSignupRequest(parsed)).unwrap();
     },
-    onSuccess: (user) => {
+    onSuccess: (result) => {
       toast.success("Account created", {
-        description: `Welcome aboard${user.name ? `, ${user.name}` : ""}.`,
+        description: "We've sent a 6-digit code to your email.",
       });
-      // New accounts are always USER role, so no admin branch is needed here.
-      router.replace(ROUTES.dashboard);
-      router.refresh();
+      router.replace(`/verify-email?email=${encodeURIComponent(result.email)}`);
     },
   });
 
@@ -306,7 +303,7 @@ export function SignupForm() {
                 <div>
                   <h3 className="text-sm font-semibold">Government ID verification</h3>
                   <p className="text-muted-foreground mt-0.5 text-xs">
-                    Upload a photo of the front and back of your ID. This is required to create your account.
+                    Upload a clear photo of your ID. This is required to create your account.
                   </p>
                 </div>
 
@@ -337,33 +334,10 @@ export function SignupForm() {
 
                 <FormField
                   control={form.control}
-                  name="govIdFront"
+                  name="govId"
                   render={({ field, fieldState }) => (
                     <FormItem>
-                      <FormLabel>Front side photo</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                          aria-invalid={Boolean(fieldState.error)}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            field.onChange(file ?? undefined);
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription>JPEG, PNG, GIF or WebP. Max 5MB.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="govIdBack"
-                  render={({ field, fieldState }) => (
-                    <FormItem>
-                      <FormLabel>Back side photo</FormLabel>
+                      <FormLabel>ID photo</FormLabel>
                       <FormControl>
                         <Input
                           type="file"

@@ -65,11 +65,21 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ["Profile", "UserDashboard", "WalletSummary", "Session"],
     }),
 
-    signup: builder.mutation<AuthUser, SignupRequest>({
+    signup: builder.mutation<{ userId: string; email: string }, SignupRequest>({
       query: (body) => ({ url: "/auth/signup", method: "POST", body }),
+      transformResponse: (response: ApiSuccess<{ userId: string; email: string }>) => {
+        if (!response.data) {
+          throw new Error("Signup response did not include user details");
+        }
+        return response.data;
+      },
+    }),
+
+    verifyEmail: builder.mutation<AuthUser, { email: string; otp: string }>({
+      query: (body) => ({ url: "/auth/verify-email", method: "POST", body }),
       transformResponse: (response: ApiSuccess<AuthPayload>) => {
         if (!response.data?.user) {
-          throw new Error("Signup response did not include a user");
+          throw new Error("Verify email response did not include a user");
         }
         return response.data.user;
       },
@@ -82,6 +92,20 @@ export const authApi = baseApi.injectEndpoints({
         }
       },
       invalidatesTags: ["Profile", "UserDashboard", "WalletSummary", "Session"],
+    }),
+
+    resendOtp: builder.mutation<
+      { message?: string },
+      { email: string; purpose?: 'SIGNUP' | 'PASSWORD_RESET' }
+    >({
+      query: (body) => ({
+        url: bff("/auth/resend-otp"),
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: ApiSuccess<unknown>) => ({
+        message: response.message,
+      }),
     }),
 
     logout: builder.mutation<void, void>({
@@ -115,7 +139,7 @@ export const authApi = baseApi.injectEndpoints({
 
     resetPassword: builder.mutation<
       { message?: string },
-      { token: string; newPassword: string }
+      { email: string; otp: string; newPassword: string }
     >({
       query: (body) => ({
         url: bff("/auth/reset-password"),
@@ -160,6 +184,8 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useSignupMutation,
+  useVerifyEmailMutation,
+  useResendOtpMutation,
   useLogoutMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,

@@ -20,7 +20,7 @@ import type { AuthUser } from "@/types/models";
  */
 export async function handleCredentialExchange(
   request: NextRequest,
-  upstreamPath: "/auth/login" | "/auth/signup",
+  upstreamPath: "/auth/login" | "/auth/signup" | "/auth/verify-email",
 ): Promise<NextResponse> {
   const contentType = request.headers.get("content-type") ?? "";
 

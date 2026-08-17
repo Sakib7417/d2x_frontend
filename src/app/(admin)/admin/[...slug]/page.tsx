@@ -1349,14 +1349,13 @@ function AdminUserDetailPage({ userId }: { userId: UUID }) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {user.govIdType || user.govIdFrontUrl || user.govIdBackUrl ? (
+              {user.govIdType || user.govIdUrl ? (
                 <div className="space-y-4">
                   {user.govIdType ? (
                     <DetailRow label="ID type" value={humanizeEnum(user.govIdType)} />
                   ) : null}
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <KycImage label="Front side" url={user.govIdFrontUrl} />
-                    <KycImage label="Back side" url={user.govIdBackUrl} />
+                    <KycImage label="ID photo" url={user.govIdUrl} />
                   </div>
                 </div>
               ) : (

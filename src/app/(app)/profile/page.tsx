@@ -265,12 +265,11 @@ export default function ProfilePage() {
               {isLoading || !profile ? (
                 <div className="space-y-3">
                   <Skeleton className="h-8 w-full" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="aspect-4/3 w-full" />
+                  <div className="grid grid-cols-1 gap-4">
                     <Skeleton className="aspect-4/3 w-full" />
                   </div>
                 </div>
-              ) : profile.govIdType || profile.govIdFrontUrl || profile.govIdBackUrl ? (
+              ) : profile.govIdType || profile.govIdUrl ? (
                 <div className="space-y-4">
                   {profile.govIdType ? (
                     <div className="flex items-center justify-between">
@@ -278,9 +277,8 @@ export default function ProfilePage() {
                       <span className="text-sm font-medium">{humanizeEnum(profile.govIdType)}</span>
                     </div>
                   ) : null}
-                  <div className="grid grid-cols-2 gap-4">
-                    <ProfileKycImage label="Front" url={profile.govIdFrontUrl} />
-                    <ProfileKycImage label="Back" url={profile.govIdBackUrl} />
+                  <div className="grid grid-cols-1 gap-4">
+                    <ProfileKycImage label="ID photo" url={profile.govIdUrl} />
                   </div>
                 </div>
               ) : (
