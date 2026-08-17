@@ -1446,6 +1446,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function KycImage({ label, url }: { label: string; url?: string | null }) {
+  const [errored, setErrored] = useState(false);
   if (!url) {
     return (
       <div className="space-y-2">
@@ -1456,15 +1457,34 @@ function KycImage({ label, url }: { label: string; url?: string | null }) {
       </div>
     );
   }
+  const normalized =
+    url.startsWith("http") || url.startsWith("/") ? url : `/${url}`;
+  if (errored) {
+    return (
+      <div className="space-y-2">
+        <p className="text-muted-foreground text-xs font-medium">{label}</p>
+        <a
+          href={normalized}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-muted flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center"
+        >
+          <span className="text-muted-foreground text-xs">Could not load image.</span>
+          <span className="text-foreground text-xs font-medium underline">Open raw URL</span>
+        </a>
+      </div>
+    );
+  }
   return (
     <div className="space-y-2">
       <p className="text-muted-foreground text-xs font-medium">{label}</p>
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+      <a href={normalized} target="_blank" rel="noopener noreferrer" className="block">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={url}
+          src={normalized}
           alt={`${label} of government ID`}
           className="aspect-[4/3] w-full rounded-lg border object-cover transition-opacity hover:opacity-80"
+          onError={() => setErrored(true)}
         />
       </a>
     </div>
