@@ -31,7 +31,8 @@ export async function GET(
     .trim()
     .toUpperCase();
 
-  const target = new URL("/signup", request.nextUrl.origin);
+  const appUrl = process.env.APP_URL || request.nextUrl.origin;
+  const target = new URL("/signup", appUrl);
 
   if (REFERRAL_CODE_PATTERN.test(normalised)) {
     target.searchParams.set("ref", normalised);
