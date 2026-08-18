@@ -340,7 +340,7 @@ export function NewsTicker() {
         <span className="text-sm font-semibold">News</span>
       </div>
       <div className="relative flex-1 overflow-hidden">
-        <div className="flex gap-8 whitespace-nowrap animate-news-scroll">
+        <div className="flex w-max gap-8 whitespace-nowrap animate-news-scroll">
           {[...news, ...news].map((item, i) => (
             <span key={i} className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{item.title}:</span> {item.message}

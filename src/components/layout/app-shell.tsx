@@ -36,8 +36,6 @@ import { ADMIN_NAV, USER_NAV, type NavSection } from "@/config/navigation";
 export interface AppShellProps {
   navigation: "user" | "admin";
   children: ReactNode;
-  /** Unread notification count, threaded to both topbar and sidebar badge. */
-  notificationCount?: number;
   /** Extra controls for the topbar's right side. */
   topbarActions?: ReactNode;
   /** Constrain content width. Wide tables should pass `false`. */
@@ -47,7 +45,6 @@ export interface AppShellProps {
 export function AppShell({
   navigation,
   children,
-  notificationCount,
   topbarActions,
   constrained = true,
 }: AppShellProps) {
@@ -107,7 +104,6 @@ export function AppShell({
       <div className="hidden h-full lg:flex">
         <Sidebar
           sections={effectiveSections}
-          badges={{ notifications: notificationCount }}
           footer={<UserMenu />}
         />
       </div>
@@ -122,7 +118,6 @@ export function AppShell({
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Sidebar
             sections={effectiveSections}
-            badges={{ notifications: notificationCount }}
             footer={<UserMenu />}
             mobile
             className="w-full border-r-0"
@@ -131,7 +126,7 @@ export function AppShell({
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar notificationCount={notificationCount}>{topbarActions}</Topbar>
+        <Topbar>{topbarActions}</Topbar>
 
         {/* `min-w-0` is load-bearing: without it a wide table inside a flex
             child refuses to shrink and blows out the whole layout. */}

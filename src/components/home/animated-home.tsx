@@ -749,7 +749,7 @@ function Partnerships() {
     },
     {
       icon: Handshake,
-      title: "DSJ Exchange (DSJEX)",
+      title: "AURA Exchange (AURAEX)",
       desc: "Trading infrastructure and data support.",
       list: [
         "Trading Infrastructure",
@@ -806,7 +806,7 @@ function Advantages() {
   const items = [
     { icon: Brain, title: "AI-Powered Trading Precision", description: "Advanced AI continuously analyzes market data to identify opportunities and improve execution efficiency." },
     { icon: Scale, title: "Regulatory Compliance", description: "A structured framework designed to support transparency, operational integrity, and business sustainability." },
-    { icon: Handshake, title: "Long-Term Strategic Partnership", description: "Dollar2X and DSJ Exchange maintain a long-term cooperation agreement focused on technology and ecosystem growth." },
+    { icon: Handshake, title: "Long-Term Strategic Partnership", description: "Dollar2X and AURA Exchange maintain a long-term cooperation agreement focused on technology and ecosystem growth." },
     { icon: ShieldCheck, title: "Fund Security Focus", description: "Strong operational systems, infrastructure management, and GLOBAL resources support platform stability." },
     { icon: Coins, title: "Multiple Income Opportunities", description: "Benefit from trading, referral, and team-development incentives within the platform structure." },
     { icon: LayoutDashboard, title: "Transparent Dashboard", description: "Real-time reporting and easy account management across all devices." },
@@ -950,7 +950,7 @@ function Cooperation() {
           <GoldCard className="mx-auto max-w-4xl" glow>
             <CardHeader>
               <CardTitle className="leading-snug">
-                Dollar2X Global Group Ltd and DSJ Exchange have established a long-term
+                Dollar2X Global Group Ltd and AURA Exchange have established a long-term
                 strategic partnership focused on technology sharing, infrastructure
                 support, business development, and future expansion.
               </CardTitle>
@@ -968,7 +968,7 @@ function Cooperation() {
               </table>
               <div className="mt-6 rounded-lg border border-[var(--logo-gold-400)]/25 bg-[var(--logo-gold-400)]/10 p-4 text-sm text-[var(--logo-gold-200)]">
                 <strong className="font-medium">Authorization Framework:</strong>{" "}
-                DSJ Exchange provides technology support and trading data
+                AURA Exchange provides technology support and trading data
                 infrastructure, while Dollar2X Global Group Ltd manages platform
                 operations, member services, and business development under the
                 cooperation agreement.

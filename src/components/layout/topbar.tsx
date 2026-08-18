@@ -1,14 +1,12 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
-import Link from "next/link";
+import { Menu, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
 import { useAppDispatch } from "@/store/hooks";
 import { commandPaletteSet, mobileNavToggled } from "@/store/slices/ui-slice";
-import { ROUTES } from "@/config/routes";
 
 /**
  * Application top bar.
@@ -23,15 +21,12 @@ import { ROUTES } from "@/config/routes";
  */
 
 export interface TopbarProps {
-  /** Unread notification count. Undefined while loading. */
-  notificationCount?: number;
   /** Right-hand slot for page-specific controls. */
   children?: React.ReactNode;
   className?: string;
 }
 
 export function Topbar({
-  notificationCount,
   children,
   className,
 }: TopbarProps) {
@@ -60,34 +55,6 @@ export function Topbar({
       <div className="flex-1" />
 
       {children}
-
-      <Button
-        variant="ghost"
-        size="icon"
-        asChild
-        className="relative"
-        aria-label={
-          notificationCount
-            ? `Notifications, ${notificationCount} unread`
-            : "Notifications"
-        }
-      >
-        <Link href={ROUTES.notifications}>
-          <Bell className="size-4.5" />
-          {notificationCount !== undefined && notificationCount > 0 && (
-            <span
-              className={cn(
-                "bg-primary text-primary-foreground absolute -top-0.5 -right-0.5",
-                "grid h-4 min-w-4 place-items-center rounded-full px-1",
-                "text-[0.5625rem] font-bold tabular-nums",
-                "ring-background ring-2",
-              )}
-            >
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </span>
-          )}
-        </Link>
-      </Button>
 
       <ThemeToggle />
     </header>

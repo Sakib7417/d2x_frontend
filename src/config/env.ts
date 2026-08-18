@@ -28,7 +28,7 @@ const schema = z.object({
     .url()
     .transform((value) => value.replace(/\/+$/, ""))
     .default("https://api.dollar2x.trade/api/v1"),
-    // .default("http://localhost:3000"),
+    // .default("http://localhost:3000/api/v1"),
 
   /**
    * Public origin of THIS app. Used for absolute redirect URLs and for the

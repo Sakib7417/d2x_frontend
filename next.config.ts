@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/api\/v1$/, "") ?? "https://api.dollar2x.trade/";
-//const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/api\/v1$/, "") ?? "http://localhost:3000";
+// const API_BASE_URL = process.env.API_BASE_URL?.replace(/\/api\/v1$/, "") ?? "http://localhost:3000";
 
 const nextConfig: NextConfig = {
   // Proxy uploaded images through the Next server so the browser never needs

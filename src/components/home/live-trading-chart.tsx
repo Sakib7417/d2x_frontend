@@ -147,7 +147,7 @@ export default function LiveTradingChart({ minimal = false, showHeading = true }
             </div>
             <div>
               <div className='flex items-center gap-2'>
-                <span className='font-semibold text-foreground'>D2X / USDT</span>
+                <span className='font-semibold text-foreground'>BTC / USDT</span>
                 <span className='rounded bg-[var(--logo-gold-400)]/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--logo-gold-300)]'>
                   AI Pool
                 </span>

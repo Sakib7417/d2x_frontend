@@ -1,6 +1,8 @@
 "use client";
 
 import { Check, Copy, Network, Wallet } from "lucide-react";
+
+import { BrandMark } from "@/components/layout/brand";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -89,7 +91,7 @@ export default function DashboardPage() {
       {/* 1. User name + total balance */}
       <Card className="mb-6">
         <CardContent className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
-          <div>
+          <div className="w-full sm:w-auto">
             <h2 className="text-2xl font-bold tracking-tight">
               {user?.name ? `Hello, ${user.name}` : "Welcome"}
             </h2>
@@ -97,15 +99,34 @@ export default function DashboardPage() {
               Here is your account overview.
             </p>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-muted-foreground text-sm">Total balance</p>
-            <div className="text-3xl font-bold">
-              {wallet.isLoading ? (
-                <span className="text-muted-foreground">Loading…</span>
-              ) : (
-                <Money value={wallet.data?.totalBalance} showCurrency />
-              )}
+          <div className="flex w-full flex-col items-center gap-1 sm:w-auto">
+            <div className="inline-flex items-center gap-2">
+              <BrandMark className="size-8" />
+              <span className="text-sm font-semibold tracking-tight text-foreground">
+                DOLLAR2X
+              </span>
             </div>
+            <span
+              className={`inline-flex items-center gap-1 text-sm font-medium ${
+                user?.status === "ACTIVE" ? "text-profit" : "text-loss"
+              }`}
+            >
+              <Check className="size-4" />
+              User verified: {user?.status === "ACTIVE" ? "true" : "false"}
+            </span>
+          </div>
+          <div className="w-full text-left sm:w-auto sm:text-right">
+            <p className="text-muted-foreground text-sm">Total balance</p>
+            {wallet.isLoading ? (
+              <span className="text-muted-foreground">Loading…</span>
+            ) : (
+              <Money
+                value={wallet.data?.totalBalance}
+                showCurrency
+                size="xl"
+                className="font-bold"
+              />
+            )}
           </div>
         </CardContent>
       </Card>

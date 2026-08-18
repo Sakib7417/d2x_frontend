@@ -5,6 +5,7 @@ import {
   ArrowUpFromLine,
   Bell,
   Blocks,
+  Calculator,
   ChartCandlestick,
   ChartLine,
   ClipboardList,
@@ -173,6 +174,18 @@ export const USER_NAV: NavSection[] = [
         href: ROUTES.depositBonus,
         icon: Gift,
         keywords: ["5%", "bonus", "incentive"],
+      },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      {
+        label: "Calculator",
+        href: ROUTES.calculator,
+        icon: Calculator,
+        exact: true,
+        keywords: ["profit", "roi", "commission", "compound"],
       },
     ],
   },
