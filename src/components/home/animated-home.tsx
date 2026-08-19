@@ -425,6 +425,11 @@ function Hero() {
           <Button asChild variant="outline" size="lg" className="gap-2 border-[var(--logo-gold-400)]/30 hover:border-[var(--logo-gold-400)]/60 hover:bg-[var(--logo-gold-400)]/5">
             <a href="#how-it-works">See How It Works</a>
           </Button>
+          <Button asChild variant="outline" size="lg" className="gap-2 border-[var(--logo-gold-400)]/30 hover:border-[var(--logo-gold-400)]/60 hover:bg-[var(--logo-gold-400)]/5">
+            <a href="/Dollar_2x.pdf" target="_blank" rel="noopener noreferrer">
+              <FileText className="size-4" /> business plan
+            </a>
+          </Button>
         </motion.div>
 
         {/* Stat row */}
@@ -1118,6 +1123,14 @@ function Header() {
               {label}
             </a>
           ))}
+          <a
+            href="/Dollar_2x.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative transition-colors hover:text-foreground after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-[var(--logo-gold-400)] after:transition-all after:duration-300 hover:after:w-full"
+          >
+            business plan
+          </a>
         </nav>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">

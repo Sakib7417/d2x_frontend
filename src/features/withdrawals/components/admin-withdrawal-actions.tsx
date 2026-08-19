@@ -56,7 +56,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
 
   const usdtContract =
     (typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_USDT_CONTRACT) ||
-    "0x1F71139BACbf9Ab15d239342f7783C69951736f7";
+    "0x55d398326f99059fF775485246999027B3197955";
 
   const isPending = withdrawal.status === "PENDING";
   const isProcessing = withdrawal.status === "PROCESSING";

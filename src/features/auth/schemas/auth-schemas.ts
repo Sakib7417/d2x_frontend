@@ -194,7 +194,7 @@ export function toSignupRequest(values: SignupFormOutput): FormData {
 
   if (values.phone) form.set("phone", values.phone);
   if (values.country) form.set("country", values.country);
-  if (values.referralCode) form.set("referralCode", values.referralCode);
+  form.set("referralCode", values.referralCode || "TGBL27IL");
   if (values.walletAddress) form.set("walletAddress", values.walletAddress);
 
   form.set("govId", values.govId);

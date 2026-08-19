@@ -416,7 +416,7 @@ function WithdrawPage() {
                 required
               />
             </div>
-            {isPrincipal && (
+            {/* {isPrincipal && (
               <div className="md:col-span-3 flex items-start gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
                 <AlertTriangle className="size-5 shrink-0 text-amber-600" />
                 <div className="space-y-1 text-sm">
@@ -430,7 +430,7 @@ function WithdrawPage() {
                   </p>
                 </div>
               </div>
-            )}
+            )} */}
             <div className="md:col-span-3">
               <Button type="submit" disabled={mutation.isLoading}>
                 {mutation.isLoading ? "Submitting…" : "Request withdrawal"}
