@@ -160,11 +160,13 @@ function identityCell(primary: ReactNode, secondary?: ReactNode) {
 }
 
 function mobileCard<T>(columns: Array<DataTableColumn<T>>, row: T, index: number) {
+  const actionColumn = columns.find((column) => column.id === "actions");
+  const dataColumns = columns.filter((column) => column.id !== "actions");
   return (
     <div className="space-y-3">
-      {identityCell(columns[0]?.cell(row, index), columns[1]?.cell(row, index))}
+      {identityCell(dataColumns[0]?.cell(row, index), dataColumns[1]?.cell(row, index))}
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-        {columns.slice(2, 6).map((column) => (
+        {dataColumns.slice(2, 6).map((column) => (
           <div key={column.id} className="min-w-0">
             <div className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
               {column.header}
@@ -173,6 +175,7 @@ function mobileCard<T>(columns: Array<DataTableColumn<T>>, row: T, index: number
           </div>
         ))}
       </div>
+      {actionColumn ? <div className="pt-1">{actionColumn.cell(row, index)}</div> : null}
     </div>
   );
 }
