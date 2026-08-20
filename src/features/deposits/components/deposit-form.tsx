@@ -47,6 +47,7 @@ export function DepositForm() {
   const [depositMode, setDepositMode] = useState<"wallet" | "manual">("wallet");
   const [manualTxHash, setManualTxHash] = useState("");
   const [manualSenderAddress, setManualSenderAddress] = useState("");
+  const [isPendingPayment, setIsPendingPayment] = useState(false);
   const MIN_DEPOSIT = 50; // Backend requires minimum 50 USDT
 
   // Prefer admin-configured deposit wallet, fall back to env
@@ -64,19 +65,13 @@ export function DepositForm() {
     console.log('Current wallet state:', { address, isConnected, companyWallet, usdtContract });
   }, [address, isConnected, companyWallet, usdtContract]);
 
-  const handleWalletPayment = async () => {
-    if (!isConnected) {
-      toast.error("Please connect your wallet first");
-      return;
-    }
-
+  const executeWalletPayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("Please enter a valid amount");
       return;
     }
 
     // Validate minimum deposit amount
-    const MIN_DEPOSIT = 50; // Backend requires minimum 50 USDT
     if (parseFloat(amount) < MIN_DEPOSIT) {
       toast.error(`Minimum deposit is ${MIN_DEPOSIT} USDT`);
       return;
@@ -131,6 +126,22 @@ export function DepositForm() {
       toast.error(message);
     }
   };
+
+  const handleWalletPayment = () => {
+    if (!isConnected) {
+      setIsPendingPayment(true);
+      open();
+      return;
+    }
+    void executeWalletPayment();
+  };
+
+  useEffect(() => {
+    if (isPendingPayment && isConnected) {
+      setIsPendingPayment(false);
+      void executeWalletPayment();
+    }
+  }, [isPendingPayment, isConnected]);
 
   const handleManualDeposit = async () => {
     if (!manualTxHash) {

@@ -54,6 +54,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
   const [mode, setMode] = useState<"idle" | "reject" | "process">("idle");
   const [rejectionReason, setRejectionReason] = useState("");
   const [processedHash, setProcessedHash] = useState<string | null>(null);
+  const [isPendingSend, setIsPendingSend] = useState(false);
 
   const usdtContract =
     (typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_USDT_CONTRACT) ||
@@ -82,11 +83,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
     }
   }, [isSuccess, hash, withdrawal.id, processWithdrawal, processedHash]);
 
-  const handleSend = async () => {
-    if (!isConnected) {
-      toast.error("Please connect your wallet first");
-      return;
-    }
+  const executeSend = async () => {
     if (!isValidAddress(usdtContract)) {
       toast.error("USDT contract is not configured");
       return;
@@ -111,10 +108,26 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
     } catch (error) {
       console.error("Withdrawal send error:", error);
       const message =
-        error instanceof Error ? error.message : "Failed to initiate USDT transfer";
+      error instanceof Error ? error.message : "Failed to initiate USDT transfer";
       toast.error(message);
     }
   };
+
+  const handleSend = () => {
+    if (!isConnected) {
+      setIsPendingSend(true);
+      open();
+      return;
+    }
+    void executeSend();
+  };
+
+  useEffect(() => {
+    if (isPendingSend && isConnected) {
+      setIsPendingSend(false);
+      void executeSend();
+    }
+  }, [isPendingSend, isConnected]);
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
