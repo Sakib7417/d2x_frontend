@@ -25,13 +25,13 @@ import type { Withdrawal } from "@/types/models";
 
 const USDT_ABI = [
   {
-    constant: false,
     inputs: [
       { name: "_to", type: "address" },
       { name: "_value", type: "uint256" },
     ],
     name: "transfer",
     outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ] as const;
@@ -109,7 +109,9 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
       });
     } catch (error) {
       console.error("Withdrawal send error:", error);
-      toast.error("Failed to initiate USDT transfer");
+      const message =
+        error instanceof Error ? error.message : "Failed to initiate USDT transfer";
+      toast.error(message);
     }
   };
 

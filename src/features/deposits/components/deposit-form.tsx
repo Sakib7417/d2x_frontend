@@ -17,13 +17,13 @@ import Image from "next/image";
 
 const USDT_ABI = [
   {
-    constant: false,
     inputs: [
       { name: "_to", type: "address" },
       { name: "_value", type: "uint256" }
     ],
     name: "transfer",
     outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
     type: "function"
   }
 ] as const;
@@ -125,7 +125,9 @@ export function DepositForm() {
       });
     } catch (error) {
       console.error('Payment initiation error:', error);
-      toast.error("Failed to initiate payment. Please check console for details.");
+      const message =
+        error instanceof Error ? error.message : "Failed to initiate payment. Please check console for details.";
+      toast.error(message);
     }
   };
 
