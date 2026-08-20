@@ -146,7 +146,7 @@ export function DepositForm() {
       setIsPendingPayment(false);
       void executeWalletPayment();
     }
-  }, [isPendingPayment, isConnected]);
+  }, [isPendingPayment, isConnected, executeWalletPayment]);
 
   const handleManualDeposit = async () => {
     if (!manualTxHash) {

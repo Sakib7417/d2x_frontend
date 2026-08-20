@@ -42,7 +42,7 @@ function isValidAddress(value: string): value is `0x${string}` {
 }
 
 export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal }) {
-  const { isConnected: isAppKitConnected } = useAppKitAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
   const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
@@ -132,7 +132,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
       setIsPendingSend(false);
       void executeSend();
     }
-  }, [isPendingSend, isConnected]);
+  }, [isPendingSend, isConnected, executeSend]);
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
@@ -215,7 +215,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
               )}
             </div>
 
-            {!isConnected ? (
+            {!isAppKitConnected ? (
               <Button onClick={() => open()} className="w-full">
                 <Wallet className="mr-2 size-4" />
                 Connect wallet
@@ -225,7 +225,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
                 <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
                   <div>
                     <div className="text-muted-foreground">Connected</div>
-                    <div className="font-mono text-xs">{truncateHex(address ?? "")}</div>
+                    <div className="font-mono text-xs">{truncateHex(appKitAddress ?? "")}</div>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => disconnect()}>
                     Disconnect
