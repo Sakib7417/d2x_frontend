@@ -44,7 +44,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
-  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending: isWritePending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const [processWithdrawal, processMutation] = useProcessWithdrawalMutation();
@@ -101,7 +101,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
 
     try {
       const amountInSmallestUnit = parseUnits(String(withdrawal.netAmount), 18);
-      writeContract({
+      await writeContractAsync({
         address: usdtContract,
         abi: USDT_ABI,
         functionName: "transfer",

@@ -33,7 +33,7 @@ export function DepositForm() {
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
   
-  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending: isWritePending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
@@ -117,7 +117,7 @@ export function DepositForm() {
         network
       });
       
-      writeContract({
+      await writeContractAsync({
         address: usdtContract as `0x${string}`,
         abi: USDT_ABI,
         functionName: 'transfer',
