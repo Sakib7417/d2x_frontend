@@ -5,7 +5,8 @@ import { Wallet, Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-rea
 import { toast } from "sonner";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
-import { useAppKitAccount, useAppKit, useDisconnect } from "@reown/appkit/react";
+import { useAppKit, useDisconnect } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +42,7 @@ function isValidAddress(value: string): value is `0x${string}` {
 }
 
 export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal }) {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
   const { writeContractAsync, data: hash, isPending: isWritePending } = useWriteContract();

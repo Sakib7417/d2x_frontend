@@ -5,7 +5,8 @@ import { Wallet, Loader2, QrCode, Keyboard } from "lucide-react";
 import { toast } from "sonner";
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits } from 'viem';
-import { useAppKitAccount, useDisconnect, useAppKit } from '@reown/appkit/react';
+import { useDisconnect, useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ const USDT_ABI = [
 ] as const;
 
 export function DepositForm() {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
   
