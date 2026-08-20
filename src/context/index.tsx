@@ -2,10 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { bsc, bscTestnet } from '@reown/appkit/networks'
 import React, { useState, type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
-import { projectId, wagmiAdapter } from '../config'
+import { projectId, wagmiAdapter, networks, defaultNetwork } from '../config'
 
 if (!projectId) {
   throw new Error('Project ID is not defined')
@@ -23,8 +22,8 @@ const metadata = {
 createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: [bsc, bscTestnet],
-  defaultNetwork: bsc,
+  networks,
+  defaultNetwork,
   metadata: metadata,
   features: {
     analytics: true, // Optional - defaults to your Cloud configuration

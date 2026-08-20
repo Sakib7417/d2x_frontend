@@ -58,8 +58,9 @@ export function DepositForm() {
     "";
   const usdtContract = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USDT_CONTRACT) || "";
   const network =
+    (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_BLOCKCHAIN_NETWORK) ||
     (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_DEPOSIT_NETWORK) ||
-    "bsc-testnet"; // Default to BSC testnet
+    "bsc-mainnet"; // Default to BSC mainnet
 
   // Debug logging
   useEffect(() => {
