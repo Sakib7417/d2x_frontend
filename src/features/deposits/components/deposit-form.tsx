@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCreateDepositMutation } from "@/features/deposits/api/deposits-api";
+import { useCreateDepositMutation, useDepositWalletAddressQuery } from "@/features/deposits/api/deposits-api";
 import { normalizeError } from "@/lib/api/errors";
 import { CopyButton } from "@/components/common/copy-button";
 import Image from "next/image";
@@ -39,6 +39,7 @@ export function DepositForm() {
   });
   
   const [createDeposit, mutation] = useCreateDepositMutation();
+  const { data: depositWallet } = useDepositWalletAddressQuery();
   const [amount, setAmount] = useState("");
   const [processedHash, setProcessedHash] = useState<string | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -46,11 +47,16 @@ export function DepositForm() {
   const [manualTxHash, setManualTxHash] = useState("");
   const [manualSenderAddress, setManualSenderAddress] = useState("");
   const MIN_DEPOSIT = 50; // Backend requires minimum 50 USDT
-  
-  // Get values from .env (client-side only)
-  const companyWallet = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_COMPANY_WALLET) || "";
+
+  // Prefer admin-configured deposit wallet, fall back to env
+  const companyWallet =
+    depositWallet?.address ||
+    (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_COMPANY_WALLET) ||
+    "";
   const usdtContract = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USDT_CONTRACT) || "";
-  const network = "bsc-testnet"; // Default to BSC
+  const network =
+    (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_DEPOSIT_NETWORK) ||
+    "bsc-testnet"; // Default to BSC testnet
 
   // Debug logging
   useEffect(() => {
