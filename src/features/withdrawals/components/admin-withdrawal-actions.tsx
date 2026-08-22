@@ -56,6 +56,7 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
   const [rejectionReason, setRejectionReason] = useState("");
   const [processedHash, setProcessedHash] = useState<string | null>(null);
   const [isPendingSend, setIsPendingSend] = useState(false);
+  const [manualTxHash, setManualTxHash] = useState("");
 
   const usdtContract =
     (typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_USDT_CONTRACT) ||
@@ -148,6 +149,24 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
       const message =
         normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
         "Failed to reject withdrawal";
+      toast.error(message);
+    }
+  };
+
+  const handleManualProcess = async () => {
+    if (!manualTxHash || !/^0x[a-fA-F0-9]{64}$/.test(manualTxHash)) {
+      toast.error("Enter a valid transaction hash");
+      return;
+    }
+    try {
+      await processWithdrawal({ id: withdrawal.id, transactionHash: manualTxHash }).unwrap();
+      toast.success("Withdrawal approved and marked as completed.");
+      setMode("idle");
+      setManualTxHash("");
+    } catch (error) {
+      const message =
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
+        "Failed to process withdrawal";
       toast.error(message);
     }
   };
@@ -256,6 +275,38 @@ export function AdminWithdrawalActions({ withdrawal }: { withdrawal: Withdrawal 
                 )}
               </>
             )}
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">OR</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`manual-tx-${withdrawal.id}`}>
+                Already sent? Paste transaction hash
+              </Label>
+              <Input
+                id={`manual-tx-${withdrawal.id}`}
+                value={manualTxHash}
+                onChange={(e) => setManualTxHash(e.target.value)}
+                placeholder="0x..."
+              />
+              <Button
+                onClick={handleManualProcess}
+                disabled={processMutation.isLoading || !manualTxHash}
+                variant="outline"
+                className="w-full"
+              >
+                {processMutation.isLoading && (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                )}
+                Submit transaction hash
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
