@@ -87,10 +87,17 @@ export const depositsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Deposit" as const, id }],
     }),
 
-    verifyDeposit: builder.mutation<Deposit, UUID>({
-      query: (id) => ({ url: bff(`/deposits/${id}/verify`), method: "POST" }),
+    verifyDeposit: builder.mutation<
+      Deposit,
+      { id: UUID; transactionHash?: string }
+    >({
+      query: ({ id, transactionHash }) => ({
+        url: bff(`/deposits/${id}/verify`),
+        method: "POST",
+        body: { transactionHash },
+      }),
       transformResponse: (response: ApiSuccess<Deposit>) => response.data,
-      invalidatesTags: (_result, _error, id) => [
+      invalidatesTags: (_result, _error, { id }) => [
         { type: "Deposit" as const, id },
         listTag("Deposit"),
         "DepositStats",

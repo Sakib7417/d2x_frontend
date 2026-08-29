@@ -229,21 +229,48 @@ function WalletPage() {
 
 function DepositVerifyButton({ deposit }: { deposit: Deposit }) {
   const [verify, { isLoading }] = useVerifyDepositMutation();
+  const [txHash, setTxHash] = useState<string>(deposit.transactionHash as string);
   if (deposit.status !== "PENDING") {
     return null;
   }
+
+  const handleVerify = async () => {
+    if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+      toast.error("Please enter a valid 64-character transaction hash");
+      return;
+    }
+    try {
+      await verify({ id: deposit.id, transactionHash: txHash }).unwrap();
+      toast.success("Deposit verified and approved successfully");
+    } catch (error) {
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
+          "Verification failed. Please try again.",
+      );
+    }
+  };
+
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={() => verify(deposit.id)}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <Loader2 className="mr-2 size-4 animate-spin" />
-      ) : null}
-      Verify
-    </Button>
+    <div className="flex flex-col gap-1.5 w-52">
+      <Input
+        value={txHash}
+        onChange={(e) => setTxHash(e.target.value)}
+        placeholder="Transaction hash"
+        disabled={isLoading}
+        className="h-8 text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleVerify}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="mr-2 size-4 animate-spin" />
+        ) : null}
+        Verify
+      </Button>
+    </div>
   );
 }
 
@@ -274,7 +301,6 @@ const depositColumns: DataTableColumn<Deposit>[] = [
     header: "Actions",
     cell: (r) => <DepositVerifyButton deposit={r} />,
     align: "right",
-    nowrap: true,
   },
 ];
 function DepositMobile({ row }: { row: Deposit }) {
