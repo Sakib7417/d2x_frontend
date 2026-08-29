@@ -79,6 +79,7 @@ import {
 import { normalizeError } from "@/lib/api/errors";
 import { formatCount, formatDateTime, humanizeEnum, truncateHex } from "@/lib/utils/format";
 import { AdminWithdrawalActions } from "@/features/withdrawals/components/admin-withdrawal-actions";
+import { useApproveDepositMutation } from "@/features/deposits/api/deposits-api";
 import {
   useAdminPoolBonusRequestsQuery,
   useApprovePoolBonusRequestMutation,
@@ -315,6 +316,29 @@ const usersColumns: Array<DataTableColumn<User>> = [
   { id: "kyc", header: "KYC", cell: (row) => (row.govIdType ? <StatusBadge status="ACTIVE" showIcon={false} /> : <span className="text-muted-foreground text-xs">—</span>) },
 ];
 
+function AdminDepositActions({ deposit }: { deposit: Deposit }) {
+  const [approve, { isLoading }] = useApproveDepositMutation();
+  if (deposit.status === "APPROVED" || deposit.status === "REJECTED") {
+    return null;
+  }
+  const handleApprove = async () => {
+    try {
+      await approve(deposit.id).unwrap();
+      toast.success("Deposit approved and credited");
+    } catch (error) {
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
+          "Failed to approve deposit",
+      );
+    }
+  };
+  return (
+    <Button size="sm" onClick={handleApprove} disabled={isLoading}>
+      Approve
+    </Button>
+  );
+}
+
 const depositsColumns: Array<DataTableColumn<Deposit>> = [
   { id: "user", header: "User", cell: (row) => identityCell(person(row.user, row.userId), truncateHex(row.transactionHash)) },
   { id: "amount", header: "Amount", cell: (row) => <Money value={row.amount} showCurrency size="sm" />, nowrap: true },
@@ -322,6 +346,13 @@ const depositsColumns: Array<DataTableColumn<Deposit>> = [
   { id: "network", header: "Network", cell: (row) => row.network },
   { id: "confirmations", header: "Confirmations", cell: (row) => `${row.confirmations}/${row.requiredConfirmations}`, align: "right" },
   { id: "created", header: "Created", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: (row) => <AdminDepositActions deposit={row} />,
+    align: "right",
+    width: "w-32",
+  },
 ];
 
 const withdrawalsColumns: Array<DataTableColumn<Withdrawal>> = [

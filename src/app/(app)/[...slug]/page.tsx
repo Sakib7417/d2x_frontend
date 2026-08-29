@@ -316,6 +316,11 @@ function DepositMobile({ row }: { row: Deposit }) {
         <StatusBadge status={row.status} />
       </Row>
       <Row label="Date">{date(row.createdAt)}</Row>
+      {row.status === "PENDING" ? (
+        <Row label="Actions">
+          <DepositVerifyButton deposit={row} />
+        </Row>
+      ) : null}
     </MobileCard>
   );
 }
