@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   Gift,
+  Loader2,
   ShieldCheck,
   Trophy,
   TrendingUp,
@@ -54,7 +55,10 @@ import {
   useChangePasswordMutation,
   useProfileQuery,
 } from "@/features/auth/api/auth-api";
-import { useDepositsQuery } from "@/features/deposits/api/deposits-api";
+import {
+  useDepositsQuery,
+  useVerifyDepositMutation,
+} from "@/features/deposits/api/deposits-api";
 import { DepositForm } from "@/features/deposits/components/deposit-form";
 import { useLedgersQuery } from "@/features/ledger/api/ledger-api";
 import {
@@ -223,6 +227,26 @@ function WalletPage() {
   );
 }
 
+function DepositVerifyButton({ deposit }: { deposit: Deposit }) {
+  const [verify, { isLoading }] = useVerifyDepositMutation();
+  if (deposit.status !== "PENDING") {
+    return null;
+  }
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => verify(deposit.id)}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <Loader2 className="mr-2 size-4 animate-spin" />
+      ) : null}
+      Verify
+    </Button>
+  );
+}
+
 const depositColumns: DataTableColumn<Deposit>[] = [
   { id: "date", header: "Date", cell: (r) => date(r.createdAt), nowrap: true },
   {
@@ -244,6 +268,13 @@ const depositColumns: DataTableColumn<Deposit>[] = [
     id: "status",
     header: "Status",
     cell: (r) => <StatusBadge status={r.status} />,
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: (r) => <DepositVerifyButton deposit={r} />,
+    align: "right",
+    nowrap: true,
   },
 ];
 function DepositMobile({ row }: { row: Deposit }) {

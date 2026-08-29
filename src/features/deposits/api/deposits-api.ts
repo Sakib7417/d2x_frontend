@@ -87,6 +87,16 @@ export const depositsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Deposit" as const, id }],
     }),
 
+    verifyDeposit: builder.mutation<Deposit, UUID>({
+      query: (id) => ({ url: bff(`/deposits/${id}/verify`), method: "POST" }),
+      transformResponse: (response: ApiSuccess<Deposit>) => response.data,
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Deposit" as const, id },
+        listTag("Deposit"),
+        "DepositStats",
+      ],
+    }),
+
     /* -- admin ------------------------------------------------------------- */
 
     adminDeposits: builder.query<Paginated<Deposit>, AdminDepositParams | void>(
@@ -154,6 +164,7 @@ export const {
   useDepositsQuery,
   useDepositStatisticsQuery,
   useDepositQuery,
+  useVerifyDepositMutation,
   useAdminDepositsQuery,
   useApproveDepositMutation,
   useRejectDepositMutation,
