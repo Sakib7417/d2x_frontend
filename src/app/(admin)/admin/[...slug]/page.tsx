@@ -886,7 +886,7 @@ function SettingsPage() {
           { label: "Settings" },
         ]}
       />
-      <DepositWalletCard />
+      {/* <DepositWalletCard /> */}
       <TradeScheduleCard />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-md flex-1">
