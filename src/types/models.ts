@@ -560,6 +560,23 @@ export interface UpdateTradeScheduleRequest {
   morning: string;
 }
 
+/** Trading global on/off status and schedule. */
+export interface TradingStatus {
+  enabled: boolean;
+  schedule: TradeSchedule;
+}
+
+/** User excluded from auto-trading. */
+export interface TradeExclusion {
+  id: UUID;
+  userId: UUID;
+  reason: string | null;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+
+  user?: User | UserRef;
+}
+
 /** Aggregate metrics returned by GET /admin/analytics. */
 export interface AdminAnalytics extends AdminDashboard {
   totalWalletBalance: DecimalString;

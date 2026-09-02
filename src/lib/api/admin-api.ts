@@ -19,7 +19,9 @@ import type {
   Referral,
   Setting,
   Trade,
+  TradeExclusion,
   TradeSchedule,
+  TradingStatus,
   UpdateTradeScheduleRequest,
   User,
   Wallet,
@@ -48,6 +50,15 @@ export interface UpdateConfigRequest {
 export interface ManageUserRequest {
   userId: UUID;
   action: AdminUserAction;
+  reason?: string;
+}
+
+export interface ToggleTradingRequest {
+  enabled: boolean;
+}
+
+export interface AddTradeExclusionRequest {
+  userId: UUID;
   reason?: string;
 }
 
@@ -199,6 +210,48 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiSuccess<TradeSchedule>) => response.data,
       invalidatesTags: ["Setting"],
     }),
+
+    /**
+     * Global auto-trading on/off switch.
+     *
+     * When disabled, no new trade sessions are executed by cron or manual trigger.
+     * Pending trades already created still settle on schedule.
+     */
+    adminTradingStatus: builder.query<TradingStatus, void>({
+      query: () => bff("/admin/trading/status"),
+      transformResponse: (response: ApiSuccess<TradingStatus>) => response.data,
+      providesTags: ["Setting"],
+    }),
+
+    toggleTrading: builder.mutation<{ enabled: boolean }, ToggleTradingRequest>({
+      query: (body) => ({ url: bff("/admin/trading/toggle"), method: "PUT", body }),
+      transformResponse: (response: ApiSuccess<{ enabled: boolean }>) => response.data,
+      invalidatesTags: ["Setting"],
+    }),
+
+    /**
+     * Users explicitly excluded from auto-trading. Even when trading is globally
+     * enabled, these users are skipped during trade session execution.
+     */
+    adminTradeExclusions: builder.query<Paginated<TradeExclusion>, AdminListParams>({
+      query: (params) => listQuery("/admin/trading/exclusions", params),
+      transformResponse: (response: unknown) =>
+        fromInlineEnvelope<TradeExclusion>(response, "exclusions"),
+      providesTags: (result) => listTags("TradeExclusion", result?.items),
+    }),
+
+    addTradeExclusion: builder.mutation<TradeExclusion, AddTradeExclusionRequest>({
+      query: (body) => ({ url: bff("/admin/trading/exclusions"), method: "POST", body }),
+      transformResponse: (response: ApiSuccess<TradeExclusion>) => response.data,
+      invalidatesTags: [{ type: "TradeExclusion", id: "LIST" }],
+    }),
+
+    removeTradeExclusion: builder.mutation<{ userId: UUID; excluded: boolean }, UUID>({
+      query: (userId) => ({ url: bff(`/admin/trading/exclusions/${userId}`), method: "DELETE" }),
+      transformResponse: (response: ApiSuccess<{ userId: UUID; excluded: boolean }>) => response.data,
+      invalidatesTags: [{ type: "TradeExclusion", id: "LIST" }],
+    }),
+
     manageUser: builder.mutation<User, ManageUserRequest>({
       query: (body) => ({ url: bff("/admin/users/action"), method: "POST", body }),
       transformResponse: (response: ApiSuccess<User>) => response.data,
@@ -241,6 +294,11 @@ export const {
   useManageUserMutation,
   useAdminTradeScheduleQuery,
   useUpdateTradeScheduleMutation,
+  useAdminTradingStatusQuery,
+  useToggleTradingMutation,
+  useAdminTradeExclusionsQuery,
+  useAddTradeExclusionMutation,
+  useRemoveTradeExclusionMutation,
   useToggleContentCreatorMutation,
   useAdminContentCreatorsQuery,
 } = adminApi;

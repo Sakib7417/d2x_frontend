@@ -27,6 +27,7 @@ export const API_TAGS = [
   "WithdrawalStats",
   "Trade",
   "TradeStats",
+  "TradeExclusion",
   "Referral",
   "ReferralBonus",
   "ReferralTree",

@@ -52,6 +52,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { ROUTES } from "@/config/routes";
 import { AdminUserAction, PoolBonusRequestStatus } from "@/types/enums";
 import {
@@ -66,6 +67,11 @@ import {
   useAdminSettingsQuery,
   useAdminTradeScheduleQuery,
   useAdminTradesQuery,
+  useAdminTradingStatusQuery,
+  useAdminTradeExclusionsQuery,
+  useAddTradeExclusionMutation,
+  useRemoveTradeExclusionMutation,
+  useToggleTradingMutation,
   useAdminUserDetailQuery,
   useAdminUsersQuery,
   useAdminWalletsQuery,
@@ -78,6 +84,7 @@ import {
 } from "@/lib/api/admin-api";
 import { normalizeError } from "@/lib/api/errors";
 import { formatCount, formatDateTime, humanizeEnum, truncateHex } from "@/lib/utils/format";
+import { CopyButton } from "@/components/common/copy-button";
 import { AdminWithdrawalActions } from "@/features/withdrawals/components/admin-withdrawal-actions";
 import { useApproveDepositMutation } from "@/features/deposits/api/deposits-api";
 import {
@@ -120,6 +127,7 @@ import type {
   Referral,
   Setting,
   Trade,
+  TradeExclusion,
   User,
   UserRef,
   Wallet,
@@ -144,6 +152,7 @@ interface ListPageProps<T> {
   statusOptions?: string[];
   onRowClick?: (row: T) => void;
   clientSearch?: boolean;
+  controls?: ReactNode;
 }
 
 function person(user: User | UserRef | null | undefined, fallback?: string) {
@@ -191,6 +200,7 @@ function AdminListPage<T>({
   statusOptions = [],
   onRowClick,
   clientSearch = false,
+  controls,
 }: ListPageProps<T>) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -224,6 +234,7 @@ function AdminListPage<T>({
           { label: title },
         ]}
       />
+      {controls}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-md flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
@@ -287,21 +298,19 @@ function ContentCreatorToggle({ user }: { user: User & { isContentCreator?: bool
   if (user.role === "ADMIN") return <span className="text-muted-foreground text-xs">Admin</span>;
   const isCreator = user.isContentCreator === true;
   return (
-    <Button
-      size="sm"
-      variant={isCreator ? "default" : "outline"}
+    <Switch
+      checked={isCreator}
       disabled={isLoading}
-      onClick={async () => {
+      onCheckedChange={async (checked) => {
         try {
-          await toggle({ userId: user.id, isContentCreator: !isCreator }).unwrap();
-          toast.success(isCreator ? "Content creator revoked." : "Content creator granted.");
+          await toggle({ userId: user.id, isContentCreator: checked }).unwrap();
+          toast.success(checked ? "Content creator granted." : "Content creator revoked.");
         } catch (error) {
           toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
         }
       }}
-    >
-      {isCreator ? "Creator" : "Granted"}
-    </Button>
+      aria-label="Toggle content creator permission"
+    />
   );
 }
 
@@ -310,7 +319,7 @@ const usersColumns: Array<DataTableColumn<User>> = [
   { id: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
   { id: "role", header: "Role", cell: (row) => humanizeEnum(row.role) },
   { id: "rank", header: "Rank", cell: (row) => <StatusBadge status={row.rank} showIcon={false} /> },
-  { id: "creator", header: "Content", cell: (row) => <ContentCreatorToggle user={row} /> },
+  { id: "creator", header: "Creator", cell: (row) => <ContentCreatorToggle user={row} /> },
   { id: "country", header: "Country", cell: (row) => row.country || "—", hideBelow: "lg" },
   { id: "joined", header: "Joined", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
   { id: "kyc", header: "KYC", cell: (row) => (row.govIdType ? <StatusBadge status="ACTIVE" showIcon={false} /> : <span className="text-muted-foreground text-xs">—</span>) },
@@ -340,7 +349,7 @@ function AdminDepositActions({ deposit }: { deposit: Deposit }) {
 }
 
 const depositsColumns: Array<DataTableColumn<Deposit>> = [
-  { id: "user", header: "User", cell: (row) => identityCell(person(row.user, row.userId), truncateHex(row.transactionHash)) },
+  { id: "user", header: "User", cell: (row) => identityCell(person(row.user, row.userId), <span className="flex items-center gap-1"><span>{truncateHex(row.transactionHash)}</span><CopyButton value={row.transactionHash} /></span>) },
   { id: "amount", header: "Amount", cell: (row) => <Money value={row.amount} showCurrency size="sm" />, nowrap: true },
   { id: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
   { id: "network", header: "Network", cell: (row) => row.network },
@@ -548,6 +557,234 @@ function DepositWalletCard() {
 }
 
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function TradingControls() {
+  return (
+    <div className="space-y-6">
+      <TradingStatusCard />
+      <TradeExclusionsCard />
+    </div>
+  );
+}
+
+function TradingStatusCard() {
+  const { data, isLoading } = useAdminTradingStatusQuery();
+  const [toggle, mutation] = useToggleTradingMutation();
+  const [enabled, setEnabled] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setEnabled(data.enabled);
+      setDirty(false);
+    }
+  }, [data]);
+
+  const save = async () => {
+    try {
+      await toggle({ enabled }).unwrap();
+      toast.success(`Trading ${enabled ? "enabled" : "disabled"}.`);
+      setDirty(false);
+    } catch (error) {
+      toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
+    }
+  };
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ChartLine className="size-5" />
+          Trading status
+        </CardTitle>
+        <CardDescription>
+          Turn auto-trading on or off. When disabled, no new trade sessions are executed.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-4">
+          <Switch
+            checked={enabled}
+            onCheckedChange={(checked) => {
+              setEnabled(checked);
+              setDirty(true);
+            }}
+            disabled={isLoading || mutation.isLoading}
+          />
+          <span className="text-sm font-medium">{enabled ? "Trading is ON" : "Trading is OFF"}</span>
+        </div>
+        {dirty ? (
+          <div className="mt-4 flex items-center gap-3">
+            <Button type="button" onClick={save} disabled={mutation.isLoading}>
+              {mutation.isLoading ? "Saving…" : "Save"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                if (data) setEnabled(data.enabled);
+                setDirty(false);
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TradeExclusionsCard() {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const exclusionsResult = useAdminTradeExclusionsQuery({ page, limit });
+  const [addExclusion, addMutation] = useAddTradeExclusionMutation();
+  const [removeExclusion, removeMutation] = useRemoveTradeExclusionMutation();
+
+  const [search, setSearch] = useState("");
+  const usersResult = useAdminUsersQuery(
+    { page: 1, limit: 10, search },
+    { skip: search.trim().length < 2 }
+  );
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [reason, setReason] = useState("");
+
+  const handleAdd = async () => {
+    if (!selectedUserId) {
+      return toast.error("Select a user to exclude.");
+    }
+    try {
+      await addExclusion({
+        userId: selectedUserId as UUID,
+        reason: reason.trim() || undefined,
+      }).unwrap();
+      toast.success("User excluded from trading.");
+      setSearch("");
+      setSelectedUserId("");
+      setReason("");
+    } catch (error) {
+      toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
+    }
+  };
+
+  const handleRemove = async (userId: UUID) => {
+    try {
+      await removeExclusion(userId).unwrap();
+      toast.success("User removed from trading exclusion.");
+    } catch (error) {
+      toast.error(normalizeError(error as Parameters<typeof normalizeError>[0])?.message);
+    }
+  };
+
+  const columns: Array<DataTableColumn<TradeExclusion>> = [
+    { id: "user", header: "User", cell: (row) => person(row.user, row.userId) },
+    { id: "reason", header: "Reason", cell: (row) => row.reason || "—" },
+    { id: "added", header: "Added", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
+    {
+      id: "actions",
+      header: "Actions",
+      align: "right",
+      width: "w-28",
+      cell: (row) => (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={removeMutation.isLoading}
+          onClick={() => handleRemove(row.userId)}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ];
+
+  const users = usersResult.data?.items ?? [];
+  const showUserSelect = search.trim().length >= 2 && users.length > 0;
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Ban className="size-5" />
+          Excluded users
+        </CardTitle>
+        <CardDescription>
+          Users listed here are skipped during trade session execution even when trading is enabled.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2 sm:col-span-1">
+            <Label htmlFor="exclusion-user">Search user</Label>
+            <Input
+              id="exclusion-user"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setSelectedUserId("");
+              }}
+              placeholder="Type name or email…"
+            />
+            {showUserSelect ? (
+              <select
+                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+                value={selectedUserId}
+                onChange={(event) => setSelectedUserId(event.target.value)}
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || "Unnamed user"} ({user.email})
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="exclusion-reason">Reason (optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="exclusion-reason"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Why is this user excluded?"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={handleAdd}
+                disabled={!selectedUserId || addMutation.isLoading}
+              >
+                {addMutation.isLoading ? "Adding…" : "Add"}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <DataTable
+          columns={columns}
+          page={exclusionsResult.data}
+          loading={exclusionsResult.isLoading}
+          fetching={exclusionsResult.isFetching}
+          error={normalizeError(exclusionsResult.error)}
+          onRetry={exclusionsResult.refetch}
+          getRowId={(row) => row.id}
+          renderMobileCard={(row, index) => mobileCard(columns, row, index)}
+          emptyState={{
+            icon: Ban,
+            title: "No excluded users",
+            description: "Search and add a user above to exclude them from trading.",
+          }}
+          onPageChange={setPage}
+          onPageSizeChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+        />
+      </CardContent>
+    </Card>
+  );
+}
 
 function TradeScheduleCard() {
   const { data, isLoading } = useAdminTradeScheduleQuery();
@@ -1545,7 +1782,7 @@ export default function AdminModulePage() {
     case ROUTES.admin.withdrawals:
       return <AdminListPage title="Withdrawals" description="Monitor withdrawal requests and payout state." icon={Activity} columns={withdrawalsColumns} useListQuery={useAdminWithdrawalsQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "PROCESSING", "COMPLETED", "REJECTED", "FAILED"]} clientSearch />;
     case ROUTES.admin.trading:
-      return <AdminListPage title="Trading" description="Review platform trades, settlement, profit, and commission." icon={ChartLine} columns={tradesColumns} useListQuery={useAdminTradesQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "ACTIVE", "COMPLETED", "FAILED", "CANCELLED"]} />;
+      return <AdminListPage title="Trading" description="Control auto-trading, manage excluded users, and review platform trades." icon={ChartLine} columns={tradesColumns} useListQuery={useAdminTradesQuery} getRowId={(row) => row.id} statusOptions={["PENDING", "ACTIVE", "COMPLETED", "FAILED", "CANCELLED"]} controls={<TradingControls />} />;
     case ROUTES.admin.wallets:
       return <AdminListPage title="Wallets" description="Inspect member wallet balances and aggregate movement." icon={WalletCards} columns={walletsColumns} useListQuery={useAdminWalletsQuery} getRowId={(row) => row.id} />;
     case ROUTES.admin.referralReports:
