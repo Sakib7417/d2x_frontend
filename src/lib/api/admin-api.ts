@@ -62,6 +62,24 @@ export interface AddTradeExclusionRequest {
   reason?: string;
 }
 
+export interface GiveRewardRequest {
+  userId: UUID;
+  amount: number;
+  walletType: string;
+  reason: string;
+}
+
+export interface AdminTeamMember {
+  id: UUID;
+  userId: UUID;
+  level: number;
+  investedAmount: number;
+  directReferralCount: number;
+  teamSize: number;
+  joinedAt: string | null;
+  user: { id: UUID; name: string | null; email: string } | null;
+}
+
 const listQuery = (path: string, params: AdminListParams) => ({
   url: bff(path),
   params: buildQuery({
@@ -101,6 +119,15 @@ export const adminApi = baseApi.injectEndpoints({
         result
           ? [listTag("User"), { type: "User" as const, id: result.id }]
           : [listTag("User")],
+    }),
+    /**
+     * Team members under a user (all levels) with each member's approved
+     * deposit total — the per-member investment breakdown on Referrals.
+     */
+    adminUserTeam: builder.query<{ members: AdminTeamMember[] }, UUID>({
+      query: (userId) => bff(`/admin/users/${userId}/team`),
+      transformResponse: (response: ApiSuccess<{ members: AdminTeamMember[] }>) =>
+        response.data,
     }),
     adminDeposits: builder.query<Paginated<Deposit>, AdminListParams>({
       query: (params) => listQuery("/admin/deposits", params),
@@ -252,6 +279,14 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "TradeExclusion", id: "LIST" }],
     }),
 
+    /**
+     * Manually credit a reward to a user's wallet (`POST /admin/users/reward`).
+     * The backend writes an ADJUSTMENT ledger entry and notifies the user.
+     */
+    giveReward: builder.mutation<unknown, GiveRewardRequest>({
+      query: (body) => ({ url: bff("/admin/users/reward"), method: "POST", body }),
+      invalidatesTags: [listTag("Wallet"), listTag("Ledger"), "AdminDashboard"],
+    }),
     manageUser: builder.mutation<User, ManageUserRequest>({
       query: (body) => ({ url: bff("/admin/users/action"), method: "POST", body }),
       transformResponse: (response: ApiSuccess<User>) => response.data,
@@ -279,6 +314,7 @@ export const {
   useAdminAnalyticsQuery,
   useAdminUsersQuery,
   useAdminUserDetailQuery,
+  useAdminUserTeamQuery,
   useAdminDepositsQuery,
   useAdminWithdrawalsQuery,
   useAdminTradesQuery,
@@ -292,6 +328,7 @@ export const {
   useAdminSettingsQuery,
   useUpdateConfigMutation,
   useManageUserMutation,
+  useGiveRewardMutation,
   useAdminTradeScheduleQuery,
   useUpdateTradeScheduleMutation,
   useAdminTradingStatusQuery,

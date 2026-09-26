@@ -49,12 +49,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { ROUTES } from "@/config/routes";
-import { AdminUserAction, PoolBonusRequestStatus } from "@/types/enums";
+import { AdminUserAction, PoolBonusRequestStatus, WalletType } from "@/types/enums";
 import {
   useAdminAnalyticsQuery,
   useAdminAuditLogsQuery,
@@ -73,9 +82,11 @@ import {
   useRemoveTradeExclusionMutation,
   useToggleTradingMutation,
   useAdminUserDetailQuery,
+  useAdminUserTeamQuery,
   useAdminUsersQuery,
   useAdminWalletsQuery,
   useManageUserMutation,
+  useGiveRewardMutation,
   useAdminWithdrawalsQuery,
   useUpdateConfigMutation,
   useUpdateTradeScheduleMutation,
@@ -314,15 +325,121 @@ function ContentCreatorToggle({ user }: { user: User & { isContentCreator?: bool
   );
 }
 
+const REWARD_WALLET_TYPES = Object.keys(WalletType).filter(
+  (t) => t !== "ADMIN_COMMISSION",
+) as Array<keyof typeof WalletType>;
+
+function UserRewardAction({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [walletType, setWalletType] =
+    useState<keyof typeof WalletType>("TRADING_PROFIT");
+  const [reason, setReason] = useState("");
+  const [giveReward, { isLoading }] = useGiveRewardMutation();
+
+  const submit = async () => {
+    if (!(Number(amount) > 0)) return toast.error("Enter a positive amount.");
+    if (!reason.trim()) return toast.error("Reason is required.");
+    try {
+      await giveReward({
+        userId: user.id,
+        amount: Number(amount),
+        walletType: WalletType[walletType],
+        reason: reason.trim(),
+      }).unwrap();
+      toast.success("Reward credited to user wallet.");
+      setOpen(false);
+      setAmount("");
+      setReason("");
+    } catch (error) {
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
+          "Failed to give reward",
+      );
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Reward
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Give reward</DialogTitle>
+          <DialogDescription>
+            Credit a reward to {user.name || user.email}. This is recorded in
+            the user&apos;s ledger as an adjustment and they are notified.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor={`reward-amount-${user.id}`}>Amount (USDT)</Label>
+            <Input
+              id={`reward-amount-${user.id}`}
+              type="number"
+              min="0.00000001"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`reward-wallet-${user.id}`}>Credit to wallet</Label>
+            <select
+              id={`reward-wallet-${user.id}`}
+              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+              value={walletType}
+              onChange={(e) =>
+                setWalletType(e.target.value as keyof typeof WalletType)
+              }
+            >
+              {REWARD_WALLET_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {humanizeEnum(WalletType[t])}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`reward-reason-${user.id}`}>Reason</Label>
+            <Input
+              id={`reward-reason-${user.id}`}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g., Top performer this week"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={isLoading}>
+            {isLoading ? "Crediting…" : "Give reward"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const usersColumns: Array<DataTableColumn<User>> = [
   { id: "user", header: "User", cell: (row) => identityCell(row.name || "Unnamed user", row.email) },
   { id: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
   { id: "role", header: "Role", cell: (row) => humanizeEnum(row.role) },
   { id: "rank", header: "Rank", cell: (row) => <StatusBadge status={row.rank} showIcon={false} /> },
-  { id: "creator", header: "Creator", cell: (row) => <ContentCreatorToggle user={row} /> },
+  { id: "creator", header: "Creator", cell: (row) => <span className="block" onClick={(e) => e.stopPropagation()}><ContentCreatorToggle user={row} /></span> },
   { id: "country", header: "Country", cell: (row) => row.country || "—", hideBelow: "lg" },
   { id: "joined", header: "Joined", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
   { id: "kyc", header: "KYC", cell: (row) => (row.govIdType ? <StatusBadge status="ACTIVE" showIcon={false} /> : <span className="text-muted-foreground text-xs">—</span>) },
+  { id: "actions", header: "", cell: (row) => <span className="block" onClick={(e) => e.stopPropagation()}><UserRewardAction user={row} /></span>, align: "right", width: "w-24" },
 ];
 
 function AdminDepositActions({ deposit }: { deposit: Deposit }) {
@@ -372,6 +489,18 @@ const withdrawalsColumns: Array<DataTableColumn<Withdrawal>> = [
   { id: "wallet", header: "Wallet", cell: (row) => humanizeEnum(row.walletType) },
   { id: "network", header: "Network", cell: (row) => row.network },
   { id: "created", header: "Created", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
+  {
+    id: "remark",
+    header: "Remark",
+    cell: (row) =>
+      row.rejectionReason ? (
+        <span className="text-muted-foreground block max-w-56 truncate" title={row.rejectionReason}>
+          {row.rejectionReason}
+        </span>
+      ) : (
+        "—"
+      ),
+  },
   { id: "actions", header: "Actions", cell: (row) => <AdminWithdrawalActions withdrawal={row} />, align: "right", width: "w-40" },
 ];
 
@@ -393,13 +522,83 @@ const walletsColumns: Array<DataTableColumn<Wallet>> = [
   { id: "updated", header: "Updated", cell: (row) => formatDateTime(row.updatedAt), nowrap: true },
 ];
 
+function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
+  const [open, setOpen] = useState(false);
+  const query = useAdminUserTeamQuery(userId, { skip: !open });
+  const members = query.data?.members ?? [];
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          Team
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Team — {name}</DialogTitle>
+          <DialogDescription>
+            Members in this user&apos;s downline and how much each has invested
+            (approved deposits).
+          </DialogDescription>
+        </DialogHeader>
+        {query.isLoading ? (
+          <div className="space-y-2 py-2">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ) : members.length === 0 ? (
+          <p className="text-muted-foreground py-6 text-center text-sm">
+            No team members yet.
+          </p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted-foreground border-b text-left text-xs uppercase">
+                  <th className="py-2 pr-2 font-medium">Member</th>
+                  <th className="py-2 pr-2 font-medium">Level</th>
+                  <th className="py-2 pr-2 text-right font-medium">Invested</th>
+                  <th className="py-2 text-right font-medium">Directs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id} className="border-border/50 border-b">
+                    <td className="py-2 pr-2">
+                      {identityCell(
+                        m.user?.name || m.user?.email || m.userId,
+                        m.user?.email,
+                      )}
+                    </td>
+                    <td className="py-2 pr-2">L{m.level}</td>
+                    <td className="py-2 pr-2 text-right">
+                      <Money value={String(m.investedAmount)} showCurrency size="sm" />
+                    </td>
+                    <td className="py-2 text-right">
+                      {formatCount(m.directReferralCount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const referralsColumns: Array<DataTableColumn<Referral>> = [
   { id: "user", header: "User", cell: (row) => person(row.user, row.userId) },
   { id: "sponsor", header: "Sponsor", cell: (row) => person(row.sponsor, row.sponsorId || undefined) },
   { id: "level", header: "Level", cell: (row) => formatCount(row.level) },
   { id: "direct", header: "Direct", cell: (row) => formatCount(row.directReferralCount), align: "right" },
   { id: "team", header: "Team size", cell: (row) => formatCount(row.teamSize), align: "right" },
+  { id: "directDeposits", header: "Direct deposits", cell: (row) => <Money value={row.directDepositAmount} showCurrency size="sm" />, nowrap: true },
+  { id: "teamDeposits", header: "Team deposits", cell: (row) => <Money value={row.teamDepositAmount} showCurrency size="sm" />, nowrap: true },
   { id: "bonus", header: "Bonus earned", cell: (row) => <Money value={row.totalBonusEarned} showCurrency size="sm" />, nowrap: true },
+  { id: "actions", header: "", cell: (row) => <UserTeamDialog userId={row.userId} name={person(row.user, row.userId)} />, align: "right", width: "w-20" },
 ];
 
 const ranksColumns: Array<DataTableColumn<Rank>> = [

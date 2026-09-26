@@ -380,6 +380,21 @@ const withdrawalColumns: DataTableColumn<Withdrawal>[] = [
     header: "Status",
     cell: (r) => <StatusBadge status={r.status} />,
   },
+  {
+    id: "remark",
+    header: "Remark",
+    cell: (r) =>
+      r.rejectionReason ? (
+        <span
+          className="text-muted-foreground block max-w-56 truncate"
+          title={r.rejectionReason}
+        >
+          {r.rejectionReason}
+        </span>
+      ) : (
+        "—"
+      ),
+  },
 ];
 function WithdrawalMobile({ row }: { row: Withdrawal }) {
   return (
@@ -394,6 +409,7 @@ function WithdrawalMobile({ row }: { row: Withdrawal }) {
       <Row label="Status">
         <StatusBadge status={row.status} />
       </Row>
+      {row.rejectionReason && <Row label="Remark">{row.rejectionReason}</Row>}
       <Row label="Date">{date(row.createdAt)}</Row>
     </MobileCard>
   );
@@ -562,6 +578,7 @@ function TransactionsPage() {
         renderMobileCard={(r) => (
           <MobileCard>
             <Row label="Type">{title(r.type)}</Row>
+            {r.description && <Row label="Remark">{r.description}</Row>}
             <Row label="Credit">
               <Money value={r.credit} />
             </Row>
