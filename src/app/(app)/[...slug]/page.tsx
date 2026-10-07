@@ -1162,7 +1162,13 @@ function RanksPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {p.requirements.map((r) => (
+              {p.achieved && (
+                <p className="text-muted-foreground text-sm">
+                  Requirements met — bonus unlocked.
+                </p>
+              )}
+              {!p.achieved &&
+                p.requirements.map((r) => (
                 <div
                   key={r.key}
                   className="flex items-center justify-between gap-2 text-sm"
