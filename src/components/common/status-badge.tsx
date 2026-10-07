@@ -175,6 +175,21 @@ export function RankBadge({
 }) {
   if (!rank) return <span className="text-muted-foreground text-sm">—</span>;
 
+  if (rank === "NONE") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border font-semibold tracking-wide whitespace-nowrap",
+          "bg-muted text-muted-foreground border-border",
+          size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm",
+          className,
+        )}
+      >
+        No Rank
+      </span>
+    );
+  }
+
   const level = Number.parseInt(rank.replace(/\D/g, ""), 10) || 1;
   const colour = `var(--rank-${Math.min(Math.max(level, 1), 7)})`;
 

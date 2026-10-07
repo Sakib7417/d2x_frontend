@@ -124,6 +124,7 @@ export const TradeType = {
 export type TradeType = (typeof TradeType)[keyof typeof TradeType];
 
 export const RankLevel = {
+  NONE: "NONE",
   LV1: "LV1",
   LV2: "LV2",
   LV3: "LV3",

@@ -51,6 +51,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { normalizeError } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import {
   useChangePasswordMutation,
   useProfileQuery,
@@ -884,6 +885,11 @@ function ReferralPage() {
       header: "Member",
       cell: (r) => r.user?.name ?? r.user?.email ?? r.userId,
     },
+    {
+      id: "rank",
+      header: "Rank",
+      cell: (r) => <RankBadge rank={r.user?.rank} />,
+    },
     { id: "joined", header: "Joined", cell: (r) => date(r.createdAt) },
     { id: "team", header: "Team size", cell: (r) => r.teamSize },
     {
@@ -976,6 +982,9 @@ function ReferralPage() {
           <MobileCard>
             <Row label="Member">
               {r.user?.name ?? r.user?.email ?? r.userId}
+            </Row>
+            <Row label="Rank">
+              <RankBadge rank={r.user?.rank} />
             </Row>
             <Row label="Team">{r.teamSize}</Row>
             <Row label="Joined">{date(r.createdAt)}</Row>
@@ -1120,6 +1129,65 @@ function RanksPage() {
           value={q.data?.rankDetails?.teamSize ?? 0}
           loading={q.isLoading}
         />
+      </div>
+      <PageHeader
+        title="Rank progress"
+        description="What is left to unlock each level."
+      />
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {(q.data?.progress ?? []).map((p) => (
+          <Card
+            key={p.level}
+            className={cn(
+              p.isNext && "border-primary/50",
+              p.achieved && "border-profit/40",
+            )}
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between gap-2">
+                <RankBadge rank={p.level} />
+                {p.achieved ? (
+                  <span className="text-profit inline-flex items-center gap-1 text-xs font-medium">
+                    <Check className="size-3.5" /> Achieved
+                  </span>
+                ) : p.isNext ? (
+                  <span className="text-primary text-xs font-medium">
+                    Next rank
+                  </span>
+                ) : null}
+              </CardTitle>
+              <CardDescription>
+                <Money value={String(p.rankBonus)} showCurrency /> bonus ·{" "}
+                <Money value={String(p.cycleBonus)} showCurrency /> / 10 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {p.requirements.map((r) => (
+                <div
+                  key={r.key}
+                  className="flex items-center justify-between gap-2 text-sm"
+                >
+                  <span className="text-muted-foreground">{r.label}</span>
+                  <span
+                    className={cn(
+                      "font-medium tabular-nums",
+                      r.met ? "text-profit" : undefined,
+                    )}
+                  >
+                    {r.met ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Check className="size-3.5" />
+                        {r.current}/{r.required}
+                      </span>
+                    ) : (
+                      `${r.current}/${r.required}`
+                    )}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
       </div>
       <PageHeader title="Rank history" />
       <DataTable

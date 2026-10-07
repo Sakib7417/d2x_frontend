@@ -374,9 +374,28 @@ export interface RankHistoryEntry {
   changedAt: ISODateString;
 }
 
+export interface RankRequirementProgress {
+  key: string;
+  label: string;
+  required: number;
+  current: number;
+  met: boolean;
+}
+
+export interface RankProgressItem {
+  level: RankLevel;
+  name: string;
+  achieved: boolean;
+  isNext: boolean;
+  requirements: RankRequirementProgress[];
+  rankBonus: number;
+  cycleBonus: number;
+}
+
 export interface CurrentRank {
   currentRank: RankLevel;
   rankDetails: Rank | null;
+  progress: RankProgressItem[];
   history: RankHistoryEntry[];
 }
 
