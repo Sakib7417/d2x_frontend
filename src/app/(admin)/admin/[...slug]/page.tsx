@@ -63,7 +63,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { ROUTES } from "@/config/routes";
-import { AdminUserAction, PoolBonusRequestStatus, WalletType } from "@/types/enums";
+import { AdminUserAction, ALL_RANK_LEVELS, PoolBonusRequestStatus, RankLevel, WalletType } from "@/types/enums";
 import {
   useAdminAnalyticsQuery,
   useAdminAuditLogsQuery,
@@ -86,6 +86,7 @@ import {
   useAdminUsersQuery,
   useAdminWalletsQuery,
   useManageUserMutation,
+  useUpdateUserRankMutation,
   useGiveRewardMutation,
   useAdminWithdrawalsQuery,
   useUpdateConfigMutation,
@@ -557,6 +558,7 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
               <thead>
                 <tr className="text-muted-foreground border-b text-left text-xs uppercase">
                   <th className="py-2 pr-2 font-medium">Member</th>
+                  <th className="py-2 pr-2 font-medium">Rank</th>
                   <th className="py-2 pr-2 font-medium">Level</th>
                   <th className="py-2 pr-2 text-right font-medium">Invested</th>
                   <th className="py-2 text-right font-medium">Directs</th>
@@ -570,6 +572,9 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
                         m.user?.name || m.user?.email || m.userId,
                         m.user?.email,
                       )}
+                    </td>
+                    <td className="py-2 pr-2">
+                      <StatusBadge status={m.user?.rank ?? "NONE"} showIcon={false} />
                     </td>
                     <td className="py-2 pr-2">L{m.level}</td>
                     <td className="py-2 pr-2 text-right">
@@ -592,7 +597,6 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
 const referralsColumns: Array<DataTableColumn<Referral>> = [
   { id: "user", header: "User", cell: (row) => person(row.user, row.userId) },
   { id: "sponsor", header: "Sponsor", cell: (row) => person(row.sponsor, row.sponsorId || undefined) },
-  { id: "level", header: "Level", cell: (row) => formatCount(row.level) },
   { id: "direct", header: "Direct", cell: (row) => formatCount(row.directReferralCount), align: "right" },
   { id: "team", header: "Team size", cell: (row) => formatCount(row.teamSize), align: "right" },
   { id: "directDeposits", header: "Direct deposits", cell: (row) => <Money value={row.directDepositAmount} showCurrency size="sm" />, nowrap: true },
@@ -601,6 +605,74 @@ const referralsColumns: Array<DataTableColumn<Referral>> = [
   { id: "actions", header: "", cell: (row) => <UserTeamDialog userId={row.userId} name={person(row.user, row.userId)} />, align: "right", width: "w-20" },
 ];
 
+function EditRankDialog({ userId, name, currentRank }: { userId: UUID; name: string; currentRank: RankLevel }) {
+  const [open, setOpen] = useState(false);
+  const [level, setLevel] = useState<RankLevel>(currentRank);
+  const [reason, setReason] = useState("");
+  const [updateRank, mutation] = useUpdateUserRankMutation();
+
+  const save = async () => {
+    try {
+      await updateRank({ userId, level, reason: reason || undefined }).unwrap();
+      toast.success(`Rank updated to ${level}`);
+      setOpen(false);
+      setReason("");
+    } catch (err) {
+      toast.error(normalizeError(err as Parameters<typeof normalizeError>[0])?.message);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Edit rank — {name}</DialogTitle>
+          <DialogDescription>
+            Corrects the user&apos;s rank. No bonus is credited — use the reward
+            action if a bonus is owed.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="rank-select">Rank</Label>
+            <select
+              id="rank-select"
+              value={level}
+              onChange={(e) => setLevel(e.target.value as RankLevel)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              {ALL_RANK_LEVELS.map((r) => (
+                <option key={r} value={r}>
+                  {r === "NONE" ? "No Rank" : r}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="rank-reason">Reason (optional)</Label>
+            <Input
+              id="rank-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Why is this being changed?"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={save} disabled={mutation.isLoading || level === currentRank}>
+            {mutation.isLoading ? "Saving..." : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const ranksColumns: Array<DataTableColumn<Rank>> = [
   { id: "user", header: "User", cell: (row) => person(row.user, row.userId) },
   { id: "rank", header: "Rank", cell: (row) => <StatusBadge status={row.level} showIcon={false} /> },
@@ -608,6 +680,18 @@ const ranksColumns: Array<DataTableColumn<Rank>> = [
   { id: "team", header: "Team size", cell: (row) => formatCount(row.teamSize), align: "right" },
   { id: "bonus", header: "Rank bonus", cell: (row) => <Money value={row.totalRankBonusEarned} showCurrency size="sm" />, nowrap: true },
   { id: "achieved", header: "Achieved", cell: (row) => formatDateTime(row.achievedAt), nowrap: true },
+  {
+    id: "actions",
+    header: "",
+    cell: (row) => (
+      <div className="flex justify-end gap-2">
+        <UserTeamDialog userId={row.userId} name={person(row.user, row.userId)} />
+        <EditRankDialog userId={row.userId} name={person(row.user, row.userId)} currentRank={row.level} />
+      </div>
+    ),
+    align: "right",
+    width: "w-40",
+  },
 ];
 
 const cycleColumns: Array<DataTableColumn<CycleBonus>> = [

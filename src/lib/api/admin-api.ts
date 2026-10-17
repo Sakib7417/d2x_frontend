@@ -6,7 +6,7 @@ import {
 } from "@/lib/api/pagination";
 import { listTag, listTags } from "@/lib/api/tags";
 import type { ApiSuccess, Paginated, UUID } from "@/types/api";
-import type { AdminUserAction } from "@/types/enums";
+import type { AdminUserAction, RankLevel } from "@/types/enums";
 import type {
   AdminAnalytics,
   AdminDashboard,
@@ -77,7 +77,13 @@ export interface AdminTeamMember {
   directReferralCount: number;
   teamSize: number;
   joinedAt: string | null;
-  user: { id: UUID; name: string | null; email: string } | null;
+  user: { id: UUID; name: string | null; email: string; rank: RankLevel } | null;
+}
+
+export interface UpdateUserRankRequest {
+  userId: UUID;
+  level: RankLevel;
+  reason?: string;
 }
 
 const listQuery = (path: string, params: AdminListParams) => ({
@@ -287,6 +293,19 @@ export const adminApi = baseApi.injectEndpoints({
       query: (body) => ({ url: bff("/admin/users/reward"), method: "POST", body }),
       invalidatesTags: [listTag("Wallet"), listTag("Ledger"), "AdminDashboard"],
     }),
+    /**
+     * Admin override of a user's rank (`PUT /admin/users/:userId/rank`).
+     * Correction tool — no rank bonus is credited. Refreshes ranks + users.
+     */
+    updateUserRank: builder.mutation<User, UpdateUserRankRequest>({
+      query: ({ userId, ...body }) => ({
+        url: bff(`/admin/users/${userId}/rank`),
+        method: "PUT",
+        body,
+      }),
+      transformResponse: (response: ApiSuccess<User>) => response.data,
+      invalidatesTags: ["Rank", "User"],
+    }),
     manageUser: builder.mutation<User, ManageUserRequest>({
       query: (body) => ({ url: bff("/admin/users/action"), method: "POST", body }),
       transformResponse: (response: ApiSuccess<User>) => response.data,
@@ -328,6 +347,7 @@ export const {
   useAdminSettingsQuery,
   useUpdateConfigMutation,
   useManageUserMutation,
+  useUpdateUserRankMutation,
   useGiveRewardMutation,
   useAdminTradeScheduleQuery,
   useUpdateTradeScheduleMutation,
