@@ -72,6 +72,7 @@ export interface GiveRewardRequest {
 export interface AdminTeamMember {
   id: UUID;
   userId: UUID;
+  sponsorId: UUID;
   level: number;
   investedAmount: number;
   directReferralCount: number;

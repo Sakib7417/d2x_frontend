@@ -526,7 +526,11 @@ const walletsColumns: Array<DataTableColumn<Wallet>> = [
 function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
   const [open, setOpen] = useState(false);
   const query = useAdminUserTeamQuery(userId, { skip: !open });
-  const members = query.data?.members ?? [];
+  // Direct referrals first, then the rest of the downline — so it's obvious
+  // who this user personally referred vs deeper members.
+  const members = [...(query.data?.members ?? [])].sort(
+    (a, b) => Number(b.sponsorId === userId) - Number(a.sponsorId === userId),
+  );
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -539,7 +543,7 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
           <DialogTitle>Team — {name}</DialogTitle>
           <DialogDescription>
             Members in this user&apos;s downline and how much each has invested
-            (approved deposits).
+            (approved deposits). Direct referrals are marked and listed first.
           </DialogDescription>
         </DialogHeader>
         {query.isLoading ? (
@@ -558,8 +562,8 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
               <thead>
                 <tr className="text-muted-foreground border-b text-left text-xs uppercase">
                   <th className="py-2 pr-2 font-medium">Member</th>
+                  <th className="py-2 pr-2 font-medium">Relation</th>
                   <th className="py-2 pr-2 font-medium">Rank</th>
-                  <th className="py-2 pr-2 font-medium">Level</th>
                   <th className="py-2 pr-2 text-right font-medium">Invested</th>
                   <th className="py-2 text-right font-medium">Directs</th>
                 </tr>
@@ -574,9 +578,17 @@ function UserTeamDialog({ userId, name }: { userId: UUID; name: string }) {
                       )}
                     </td>
                     <td className="py-2 pr-2">
+                      {m.sponsorId === userId ? (
+                        <span className="bg-primary/15 text-primary inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
+                          Direct
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Indirect</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-2">
                       <StatusBadge status={m.user?.rank ?? "NONE"} showIcon={false} />
                     </td>
-                    <td className="py-2 pr-2">L{m.level}</td>
                     <td className="py-2 pr-2 text-right">
                       <Money value={String(m.investedAmount)} showCurrency size="sm" />
                     </td>
