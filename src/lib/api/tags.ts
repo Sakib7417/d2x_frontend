@@ -35,6 +35,7 @@ export const API_TAGS = [
   "Rank",
   "CycleBonus",
   "PoolBonusRequest",
+  "P2PTransfer",
   "Post",
   "News",
   "Ticket",

@@ -126,6 +126,23 @@ export const authApi = baseApi.injectEndpoints({
       },
     }),
 
+    /**
+     * Admin-only: sign in as a user without their password. The BFF swaps
+     * the session cookies over — after success the whole app state is stale
+     * (it is now a different user), so callers do a full navigation rather
+     * than letting RTK caches bleed across identities.
+     */
+    impersonate: builder.mutation<AuthUser, { userId: string }>({
+      query: (body) => ({ url: "/auth/impersonate", method: "POST", body }),
+      transformResponse: (response: ApiSuccess<{ user: AuthUser }>) =>
+        response.data.user,
+    }),
+
+    /** Restores the admin session parked by `impersonate`. */
+    endImpersonation: builder.mutation<void, void>({
+      query: () => ({ url: "/auth/end-impersonation", method: "POST" }),
+    }),
+
     forgotPassword: builder.mutation<{ message?: string }, { email: string }>({
       query: (body) => ({
         url: bff("/auth/forgot-password"),
@@ -187,6 +204,8 @@ export const {
   useVerifyEmailMutation,
   useResendOtpMutation,
   useLogoutMutation,
+  useImpersonateMutation,
+  useEndImpersonationMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useChangePasswordMutation,

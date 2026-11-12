@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { callUpstream } from "@/lib/api/upstream";
-import { ACCESS_TOKEN_COOKIE, clearSessionCookies } from "@/lib/auth/session";
+import {
+  ACCESS_TOKEN_COOKIE,
+  clearImpersonatorCookies,
+  clearSessionCookies,
+} from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,5 +42,6 @@ export async function POST(request: NextRequest) {
     { status: 200, headers: { "cache-control": "no-store" } },
   );
   clearSessionCookies(response.cookies);
+  clearImpersonatorCookies(response.cookies);
   return response;
 }

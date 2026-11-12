@@ -26,6 +26,7 @@ export const ROUTES = {
   wallet: "/wallet",
   deposit: "/wallet/deposit",
   withdraw: "/wallet/withdraw",
+  p2pTransfer: "/p2p-transfer",
   transactions: "/transactions",
   trading: "/trading",
   tradingHistory: "/trading/history",
@@ -78,6 +79,7 @@ export const ROUTES = {
 export const PROTECTED_PREFIXES = [
   "/dashboard",
   "/wallet",
+  "/p2p-transfer",
   "/transactions",
   "/trading",
   "/referral",

@@ -99,6 +99,7 @@ import { formatCount, formatDateTime, humanizeEnum, truncateHex } from "@/lib/ut
 import { CopyButton } from "@/components/common/copy-button";
 import { AdminWithdrawalActions } from "@/features/withdrawals/components/admin-withdrawal-actions";
 import { useApproveDepositMutation } from "@/features/deposits/api/deposits-api";
+import { useImpersonateMutation } from "@/features/auth/api/auth-api";
 import {
   useAdminPoolBonusRequestsQuery,
   useApprovePoolBonusRequestMutation,
@@ -431,6 +432,50 @@ function UserRewardAction({ user }: { user: User }) {
   );
 }
 
+/**
+ * Signs the admin straight into the member's account — no password needed.
+ * The BFF parks the admin session in impersonator cookies and swaps in the
+ * member's tokens; a banner in the user area offers "Return to admin". A full
+ * navigation (not router.push) is used so no admin RTK cache survives the
+ * identity switch.
+ */
+function UserImpersonateAction({ user }: { user: User }) {
+  const [impersonate, { isLoading }] = useImpersonateMutation();
+
+  const handleImpersonate = async () => {
+    try {
+      await impersonate({ userId: user.id }).unwrap();
+      window.location.assign(ROUTES.dashboard);
+    } catch (error) {
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ||
+          "Failed to access user account",
+      );
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleImpersonate();
+      }}
+      disabled={isLoading || user.role === "ADMIN" || user.status !== "ACTIVE"}
+      title={
+        user.role === "ADMIN"
+          ? "Cannot impersonate another admin"
+          : user.status !== "ACTIVE"
+            ? "Only active users can be impersonated"
+            : `Sign in as ${user.name || user.email}`
+      }
+    >
+      {isLoading ? "Opening…" : "Access"}
+    </Button>
+  );
+}
+
 const usersColumns: Array<DataTableColumn<User>> = [
   { id: "user", header: "User", cell: (row) => identityCell(row.name || "Unnamed user", row.email) },
   { id: "status", header: "Status", cell: (row) => <StatusBadge status={row.status} /> },
@@ -440,7 +485,7 @@ const usersColumns: Array<DataTableColumn<User>> = [
   { id: "country", header: "Country", cell: (row) => row.country || "—", hideBelow: "lg" },
   { id: "joined", header: "Joined", cell: (row) => formatDateTime(row.createdAt), nowrap: true },
   { id: "kyc", header: "KYC", cell: (row) => (row.govIdType ? <StatusBadge status="ACTIVE" showIcon={false} /> : <span className="text-muted-foreground text-xs">—</span>) },
-  { id: "actions", header: "", cell: (row) => <span className="block" onClick={(e) => e.stopPropagation()}><UserRewardAction user={row} /></span>, align: "right", width: "w-24" },
+  { id: "actions", header: "", cell: (row) => <span className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}><UserRewardAction user={row} /><UserImpersonateAction user={row} /></span>, align: "right", width: "w-36" },
 ];
 
 function AdminDepositActions({ deposit }: { deposit: Deposit }) {

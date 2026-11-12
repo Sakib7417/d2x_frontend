@@ -92,6 +92,11 @@ import {
   useCancelPoolBonusRequestMutation,
 } from "@/features/poolBonus/api/poolBonus-api";
 import {
+  useLazyP2pLookupQuery,
+  useP2pTransferMutation,
+  useP2pTransfersQuery,
+} from "@/features/p2p/api/p2p-api";
+import {
   useMyTicketsQuery,
   useMyTicketQuery,
   useCreateTicketMutation,
@@ -109,7 +114,11 @@ import {
   postImageUrl,
 } from "@/features/content/api/content-api";
 import type { Post, NewsItem } from "@/types/models";
-import { WithdrawalWalletType, PoolBonusRequestType } from "@/types/enums";
+import {
+  WalletType,
+  WithdrawalWalletType,
+  PoolBonusRequestType,
+} from "@/types/enums";
 import type { UUID } from "@/types/api";
 import type {
   AppNotification,
@@ -117,6 +126,8 @@ import type {
   Deposit,
   Ledger,
   PoolBonusRequest,
+  P2PRecipientLookup,
+  P2PTransfer,
   RankHistoryEntry,
   RecentTrade,
   Referral,
@@ -168,6 +179,7 @@ export default function UserPortalPage({
   if (route === "wallet") return <WalletPage />;
   if (route === "wallet/deposit") return <DepositPage />;
   if (route === "wallet/withdraw") return <WithdrawPage />;
+  if (route === "p2p-transfer") return <P2PTransferPage />;
   if (route === "transactions") return <TransactionsPage />;
   if (route === "trading") return <TradingPage />;
   if (route === "trading/history") return <TradeHistoryPage />;
@@ -529,6 +541,244 @@ function WithdrawPage() {
         onRetry={query.refetch}
         getRowId={(r) => r.id}
         renderMobileCard={(r) => <WithdrawalMobile row={r} />}
+        onPageChange={setPage}
+      />
+    </>
+  );
+}
+
+const P2P_WALLET_TYPES: WalletType[] = [
+  WalletType.PRINCIPAL,
+  WalletType.DEPOSIT_BONUS,
+  WalletType.REFERRAL,
+  WalletType.TRADING_PROFIT,
+  WalletType.RANK_BONUS,
+];
+
+// Mirrors backend P2P_FEE_PERCENT (env-configurable, default 5%).
+const P2P_FEE_RATE = 0.05;
+
+function P2PTransferPage() {
+  const [page, setPage] = useState(1);
+  const history = useP2pTransfersQuery(pageArgs(page));
+  const { data: profile } = useProfileQuery();
+  const { data: wallet } = useWalletSummaryQuery();
+  const [lookup, lookupState] = useLazyP2pLookupQuery();
+  const [transfer, mutation] = useP2pTransferMutation();
+
+  const [recipient, setRecipient] = useState("");
+  const [recipientInfo, setRecipientInfo] =
+    useState<P2PRecipientLookup | null>(null);
+  const [walletType, setWalletType] = useState<WalletType>(WalletType.PRINCIPAL);
+  const [amount, setAmount] = useState("");
+
+  const selectedBalance = Number(wallet?.wallets[walletType]?.balance ?? 0);
+  const feePreview = Number(amount) > 0 ? Number(amount) * P2P_FEE_RATE : 0;
+  const totalDebitPreview = Number(amount) > 0 ? Number(amount) + feePreview : 0;
+
+  async function findRecipient() {
+    if (!recipient.trim()) return toast.error("Enter an email or referral code.");
+    try {
+      const result = await lookup(recipient.trim()).unwrap();
+      setRecipientInfo(result);
+      if (!result.active) toast.warning("This user account is not active.");
+    } catch (error) {
+      setRecipientInfo(null);
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message ??
+          "User not found.",
+      );
+    }
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!recipientInfo) return toast.error("Find the recipient first.");
+    if (!(Number(amount) > 0)) return toast.error("Enter a positive amount.");
+    if (totalDebitPreview > selectedBalance)
+      return toast.error("Amount + 5% fee exceeds your wallet balance.");
+    try {
+      await transfer({ recipient: recipient.trim(), walletType, amount }).unwrap();
+      toast.success(
+        `Sent ${amount} to ${recipientInfo.name} (fee ${feePreview.toFixed(2)}).`,
+      );
+      setAmount("");
+      setRecipient("");
+      setRecipientInfo(null);
+    } catch (error) {
+      toast.error(
+        normalizeError(error as Parameters<typeof normalizeError>[0])?.message,
+      );
+    }
+  }
+
+  const columns: DataTableColumn<P2PTransfer>[] = [
+    { id: "date", header: "Date", cell: (r) => date(r.createdAt), nowrap: true },
+    {
+      id: "direction",
+      header: "Type",
+      cell: (r) => (
+        <StatusBadge
+          status={r.senderId === profile?.id ? "SENT" : "RECEIVED"}
+          tone="success"
+        />
+      ),
+    },
+    {
+      id: "counterpart",
+      header: "User",
+      cell: (r) => {
+        const other =
+          r.senderId === profile?.id ? r.receiver : r.sender;
+        return other?.name ?? other?.referralCode ?? "—";
+      },
+    },
+    { id: "wallet", header: "Wallet", cell: (r) => title(r.walletType) },
+    {
+      id: "amount",
+      header: "Amount",
+      cell: (r) => (
+        <Money
+          value={r.amount}
+          showCurrency
+          variant={r.senderId === profile?.id ? "negative" : "positive"}
+        />
+      ),
+      nowrap: true,
+    },
+    {
+      id: "fee",
+      header: "Fee",
+      cell: (r) =>
+        r.senderId === profile?.id && Number(r.feeAmount) > 0 ? (
+          <Money value={r.feeAmount} showCurrency variant="negative" />
+        ) : (
+          "—"
+        ),
+      nowrap: true,
+    },
+  ];
+
+  return (
+    <>
+      <PageHeader
+        title="P2P Transfer"
+        description="Send funds to another user — they receive the full amount in their Principal wallet. A 5% fee is charged to your wallet on top."
+      />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>New transfer</CardTitle>
+          <CardDescription>
+            Identify the recipient by email or referral code.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="p2p-recipient">Recipient email / referral code</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="p2p-recipient"
+                  value={recipient}
+                  onChange={(e) => {
+                    setRecipient(e.target.value);
+                    setRecipientInfo(null);
+                  }}
+                  placeholder="user@example.com or REF123"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={findRecipient}
+                  disabled={lookupState.isFetching || !recipient.trim()}
+                >
+                  {lookupState.isFetching ? "…" : "Find"}
+                </Button>
+              </div>
+              {recipientInfo && (
+                <p className="text-sm">
+                  Sending to <strong>{recipientInfo.name}</strong>{" "}
+                  <span className="text-muted-foreground">
+                    ({recipientInfo.referralCode})
+                  </span>
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p2p-wallet">From wallet</Label>
+              <select
+                id="p2p-wallet"
+                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+                value={walletType}
+                onChange={(e) => setWalletType(e.target.value as WalletType)}
+              >
+                {P2P_WALLET_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {title(t)} — Balance:{" "}
+                    {wallet?.wallets[t]?.balance ?? "0"}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p2p-amount">Amount receiver gets</Label>
+              <Input
+                id="p2p-amount"
+                type="number"
+                min="0.00000001"
+                step="any"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={`Available: ${selectedBalance}`}
+                required
+              />
+              {Number(amount) > 0 && (
+                <p className="text-muted-foreground text-xs">
+                  Fee (5%): {feePreview.toFixed(8)} · Total debit:{" "}
+                  {totalDebitPreview.toFixed(8)}
+                </p>
+              )}
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" disabled={mutation.isLoading || !recipientInfo}>
+                {mutation.isLoading ? "Sending…" : "Send transfer"}
+              </Button>
+            </div>
+          </form>
+          <ErrorText error={mutation.error} />
+        </CardContent>
+      </Card>
+      <PageHeader title="Transfer history" />
+      <DataTable
+        columns={columns}
+        page={history.data}
+        loading={history.isLoading}
+        fetching={history.isFetching}
+        error={normalizeError(history.error)}
+        onRetry={history.refetch}
+        getRowId={(r) => r.id}
+        renderMobileCard={(r) => (
+          <MobileCard>
+            <Row label="Type">
+              {r.senderId === profile?.id ? "Sent" : "Received"}
+            </Row>
+            <Row label="User">
+              {(r.senderId === profile?.id ? r.receiver : r.sender)?.name ??
+                "—"}
+            </Row>
+            <Row label="Wallet">{title(r.walletType)}</Row>
+            <Row label="Amount">
+              <Money value={r.amount} showCurrency />
+            </Row>
+            {r.senderId === profile?.id && Number(r.feeAmount) > 0 && (
+              <Row label="Fee">
+                <Money value={r.feeAmount} showCurrency />
+              </Row>
+            )}
+            <Row label="Date">{date(r.createdAt)}</Row>
+          </MobileCard>
+        )}
         onPageChange={setPage}
       />
     </>

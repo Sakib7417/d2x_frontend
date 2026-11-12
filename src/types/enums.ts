@@ -47,6 +47,7 @@ export const LedgerType = {
   TRADE_PROFIT: "TRADE_PROFIT",
   ADMIN_COMMISSION: "ADMIN_COMMISSION",
   COMPOUND_TRANSFER: "COMPOUND_TRANSFER",
+  P2P_TRANSFER: "P2P_TRANSFER",
   WITHDRAWAL: "WITHDRAWAL",
   WITHDRAWAL_FEE: "WITHDRAWAL_FEE",
   PENALTY: "PENALTY",
@@ -69,6 +70,7 @@ export const ReferenceType = {
   CYCLE: "CYCLE",
   WALLET: "WALLET",
   AUTO_TRADE: "AUTO_TRADE",
+  P2P_TRANSFER: "P2P_TRANSFER",
   SYSTEM: "SYSTEM",
 } as const;
 export type ReferenceType = (typeof ReferenceType)[keyof typeof ReferenceType];
@@ -182,6 +184,7 @@ export const NotificationType = {
   REFERRAL: "REFERRAL",
   RANK: "RANK",
   CYCLE: "CYCLE",
+  P2P_TRANSFER: "P2P_TRANSFER",
   SYSTEM: "SYSTEM",
   SECURITY: "SECURITY",
 } as const;

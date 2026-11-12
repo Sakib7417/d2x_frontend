@@ -237,6 +237,40 @@ export interface WithdrawalStatistics {
 }
 
 /* -------------------------------------------------------------------------- */
+/* P2P transfer                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * GET /p2p/lookup response — deliberately minimal; the backend never returns
+ * email or other account details for a lookup.
+ */
+export interface P2PRecipientLookup {
+  name: string;
+  referralCode: string;
+  active: boolean;
+}
+
+/**
+ * One row of GET /p2p/transfers. `sender`/`receiver` are trimmed to
+ * { id, name, referralCode } by the backend include.
+ */
+export interface P2PTransfer {
+  id: UUID;
+  senderId: UUID;
+  receiverId: UUID;
+  walletType: WalletType;
+  /** Amount the receiver got — always credited to their PRINCIPAL wallet. */
+  amount: DecimalString;
+  /** 5% fee borne by the sender on top of `amount`. */
+  feeAmount: DecimalString;
+  feePercent: number;
+  createdAt: ISODateString;
+
+  sender?: { id: UUID; name: string | null; referralCode: string };
+  receiver?: { id: UUID; name: string | null; referralCode: string };
+}
+
+/* -------------------------------------------------------------------------- */
 /* Trading                                                                     */
 /* -------------------------------------------------------------------------- */
 

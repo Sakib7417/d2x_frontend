@@ -10,6 +10,7 @@ import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { UserMenu } from "./user-menu";
 import { CommandPalette } from "./command-palette";
+import { ImpersonationBanner } from "@/components/common/impersonation-banner";
 import { PageTransition } from "@/components/common/page-transition";
 import { useUiPreferences } from "@/hooks/use-sidebar-persistence";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -137,6 +138,7 @@ export function AppShell({
               constrained && "mx-auto w-full max-w-[90rem]",
             )}
           >
+            {navigation === "user" ? <ImpersonationBanner /> : null}
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

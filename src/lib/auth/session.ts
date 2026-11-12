@@ -34,8 +34,23 @@ import type { UUID } from "@/types/api";
  *   serialised through a mutex in `refresh.ts`.
  */
 
-export const ACCESS_TOKEN_COOKIE = "mlm.at";
-export const REFRESH_TOKEN_COOKIE = "mlm.rt";
+// Cookie names live in ./session-cookie-names — a non-server-only file so
+// client components (e.g. the impersonation banner) can import them too.
+import {
+  ACCESS_TOKEN_COOKIE,
+  IMPERSONATOR_ACCESS_COOKIE,
+  IMPERSONATOR_REFRESH_COOKIE,
+  IMPERSONATION_FLAG_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from "./session-cookie-names";
+
+export {
+  ACCESS_TOKEN_COOKIE,
+  IMPERSONATOR_ACCESS_COOKIE,
+  IMPERSONATOR_REFRESH_COOKIE,
+  IMPERSONATION_FLAG_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+};
 
 /** Matches JWT_REFRESH_EXPIRY=7d. The cookie must not outlive the token. */
 const REFRESH_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -166,4 +181,47 @@ export function setSessionCookies(
 export function clearSessionCookies(target: ResponseCookies): void {
   target.set(ACCESS_TOKEN_COOKIE, "", { ...BASE_COOKIE_OPTIONS, maxAge: 0 });
   target.set(REFRESH_TOKEN_COOKIE, "", { ...BASE_COOKIE_OPTIONS, maxAge: 0 });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Impersonation                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Park the admin's session in the impersonator cookies and mark the session
+ * as impersonated. Called before `setSessionCookies` swaps in the target
+ * user's tokens, so the admin can always get their own session back.
+ */
+export function setImpersonatorCookies(
+  target: ResponseCookies,
+  tokens: SessionTokens,
+): void {
+  target.set(IMPERSONATOR_ACCESS_COOKIE, tokens.accessToken, BASE_COOKIE_OPTIONS);
+  target.set(IMPERSONATOR_REFRESH_COOKIE, tokens.refreshToken, {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: REFRESH_MAX_AGE_SECONDS,
+  });
+  target.set(IMPERSONATION_FLAG_COOKIE, "1", {
+    sameSite: "lax",
+    secure: isProduction,
+    path: "/",
+    maxAge: REFRESH_MAX_AGE_SECONDS,
+  });
+}
+
+export function clearImpersonatorCookies(target: ResponseCookies): void {
+  target.set(IMPERSONATOR_ACCESS_COOKIE, "", {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+  target.set(IMPERSONATOR_REFRESH_COOKIE, "", {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+  target.set(IMPERSONATION_FLAG_COOKIE, "", {
+    sameSite: "lax",
+    secure: isProduction,
+    path: "/",
+    maxAge: 0,
+  });
 }

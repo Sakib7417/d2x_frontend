@@ -99,6 +99,12 @@ export const USER_NAV: NavSection[] = [
         keywords: ["cash out", "send", "payout", "usdt out"],
       },
       {
+        label: "P2P Transfer",
+        href: ROUTES.p2pTransfer,
+        icon: ArrowLeftRight,
+        keywords: ["send", "transfer", "user to user", "p2p"],
+      },
+      {
         label: "Transactions",
         href: ROUTES.transactions,
         icon: ReceiptText,
